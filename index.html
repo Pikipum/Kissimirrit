@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+    <head>
+        <title>Kissimirrit</title>
+    </head>
+    <style>
+	body {
+	font-family: Times News Roman;
+	background-attachement: fixed;
+	background-size: cover;
+	background-color: WhiteSmoke;
+	}
+	h1 {
+   	color: darkOliveGreen;
+   	font-family: Times News Roman;
+	font-size: 250%;
+	text-align: center;
+	}
+	.btn-group button {
+        background-color: DarkOliveGreen;
+        color: white;
+	padding: 10px 10px;
+        cursor: pointer;
+        width: 100%;
+        display: inline-block;
+        }
+
+        .btn-group button:not(:last-child) {
+         border-bottom: none;
+        }
+
+        .btn-group button:hover {
+         background-color: #8FBC8B;
+        }
+	table, th, td {
+	 border-collapse:collapse;
+	 text-align: center;
+	}
+	section {
+	background-color: white;
+	}
+	.container {
+	  display: flex;
+	  align-items: center;
+	  justify-content: space-evenly;
+	  }
+	.text {
+	 font-size:20px;
+	 padding-left: 10px;
+	}
+	.image {
+	 flex-basis: 60%;
+	}
+    </style>
+
+    <body>
+	<section>
+		<br>
+                <h1>Hello HTML</h1>
+		<hr>
+	</section>
+
+		<br><br>
+		
+
+        <table style="width:100%">
+	   <th style="font-size:150%;"><u>Links</th>
+	   <th style="font-size:150%;"><u>Color Codes</th>
+	 <tr>
+	 <td><div class="btn-group">
+                  <button onclick="window.location.href='https://github.com';"><small>Github</small></button>
+		  <button onclick="window.location.href='https://www.w3schools.com/html/default.asp';"><small>HTML Tutorial</small></button>
+                </div></td>
+	 <td>
+ 		<ul>
+		  <li style="color: #cd5c5c;">IndianRed - #CD5C5C</li>
+		  <li style="color: #B22222;">FireBrick - #B22222</li>
+		  <li style="color: #FF8C00;">DarkOrange - #FF8C00</li>
+		  <li style="color: #FFD700;">Gold - #FFD700</li>
+		  <li style="color: #800080;">Purple - #800080</li>
+		  <li style="color: #008080;">Teal - #008080</li>
+		  <li style="color: #556B2F;">DarkOliveGreen - #556B2F</li>
+		   </ul>
+	 </td>
+	</tr>
+	</table>
+	<div class="container">
+	 <div class="image">
+	  <img src="images/Flexbox.png" alt="image" width="30%" />
+	 </div>
+	 <div class="text">
+	   <h2>This is vertically aligned text.</h2>
+	 </div>
+	</div>
+    </body>
+</html>
+
+
