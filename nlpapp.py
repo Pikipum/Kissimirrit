@@ -11,8 +11,11 @@ def main():
         tokens = word_tokenize(raw)
         soup = BeautifulSoup(html, 'html.parser')
         #print(soup.prettify())
-        for token in soup.find_all('title'):
-              print(token)
+        #for token in soup.find_all('title'):
+         #     print(token)
+
+        token = soup.title.string
+        print(token)
 
 
 
