@@ -55,15 +55,15 @@ def main():
 
 
     def rewrite_token(t):
-        return d.get(t, 'td_matrix[t2i["{:s}"]]'.format(t))  # Can you figure out what happens here?
+        return d.get(t, 'td_matrix[t2i["{:s}"]]'.format(t))
 
-    def rewrite_query(query):  # rewrite every token in the query
+    def rewrite_query(query):
         return " ".join(rewrite_token(t) for t in query.split())
 
     def test_query(query):
         print("Query: '" + query + "'")
         print("Rewritten:", rewrite_query(query))
-        print("Matching:", eval(rewrite_query(query)))  # Eval runs the string as a Python command
+        print("Matching:", eval(rewrite_query(query)))
         print()
 
 
