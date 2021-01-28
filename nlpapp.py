@@ -10,13 +10,9 @@ def main():
         raw = BeautifulSoup(html, 'html.parser').get_text()
         tokens = word_tokenize(raw)
         soup = BeautifulSoup(html, 'html.parser')
-        #print(soup.prettify())
-        #for token in soup.find_all('title'):
-         #     print(token)
 
-        token = soup.title.string
-        print(token)
-
-
+        headline = soup.title.string
+        print(headline)
+        #print(headline.split('-')[0])
 
 main()
