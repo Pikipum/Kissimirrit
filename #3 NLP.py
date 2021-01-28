@@ -1,3 +1,4 @@
+import re
 import sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -25,9 +26,17 @@ t2i = cv.vocabulary_  # shorter notation: t2i = term-to-index
 def main():
 
 
-
-
-
+    corpus = open("corpus/wikicorpus.txt", "r")
+    articles_str = ""
+    for line in corpus:
+        if re.search(r'<article name="', line):
+           no_tags = re.sub(r'<article name="',"", line)
+           no_tags_2 = re.sub(r'">', "", no_tags)
+           articles_str += no_tags_2
+        else:
+           articles_str += line
+    articles = articles_str.split("</article>")	
+        
 
     #print("First term (with row index 0):", terms[0])
     #print("Third term (with row index 2):", terms[2])
