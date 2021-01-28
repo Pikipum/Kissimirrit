@@ -1,3 +1,4 @@
+import re
 import sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -23,6 +24,18 @@ d = {"and": "&", "AND": "&",
 t2i = cv.vocabulary_  # shorter notation: t2i = term-to-index
 
 def main():
+
+
+    corpus = open("corpus/wikicorpus.txt", "r")
+    articles_str = ""
+    for line in corpus:
+        if re.search(r'<article name="', line):
+           no_tags = re.sub(r'<article name="',"", line)
+           no_tags_2 = re.sub(r'">', "", no_tags)
+           articles_str += no_tags_2
+        else:
+           articles_str += line
+    articles = articles_str.split("</article>")
 
 
     #print("First term (with row index 0):", terms[0])
@@ -55,15 +68,15 @@ def main():
 
 
     def rewrite_token(t):
-        return d.get(t, 'td_matrix[t2i["{:s}"]]'.format(t))
+        return d.get(t, 'td_matrix[t2i["{:s}"]]'.format(t))  # Can you figure out what happens here?
 
-    def rewrite_query(query):
+    def rewrite_query(query):  # rewrite every token in the query
         return " ".join(rewrite_token(t) for t in query.split())
 
     def test_query(query):
         print("Query: '" + query + "'")
         print("Rewritten:", rewrite_query(query))
-        print("Matching:", eval(rewrite_query(query)))
+        print("Matching:", eval(rewrite_query(query)))  # Eval runs the string as a Python command
         print()
 
 
@@ -74,24 +87,24 @@ def main():
         #test_query("( not example or great ) and nothing")  # ... or all small letters
         #test_query("not example and not nothing")
 
-    #print(sparse_matrix)
-    #print(sparse_matrix.tocsc())
-    #print(sparse_matrix.T)
+    print(sparse_matrix)
+    print(sparse_matrix.tocsc())
+    print(sparse_matrix.T)
 
 
-    #print(sparse_td_matrix)
+    print(sparse_td_matrix)
 
     def rewrite_token(t):
         return d.get(t, 'sparse_td_matrix[t2i["{:s}"]].todense()'.format(t))
 
-    #test_query("NOT example OR great")
+    test_query("NOT example OR great")
 
     hits_matrix = eval(rewrite_query("NOT example OR great"))
-    #print("Matching documents as vector (it is actually a matrix with one single row):", hits_matrix)
-    #print("The coordinates of the non-zero elements:", hits_matrix.nonzero())
+    print("Matching documents as vector (it is actually a matrix with one single row):", hits_matrix)
+    print("The coordinates of the non-zero elements:", hits_matrix.nonzero())
 
     hits_list = list(hits_matrix.nonzero()[1])
-    #print(hits_list)
+    print(hits_list)
 
     for doc_idx in hits_list:
         print("Matching doc:", documents[doc_idx])
