@@ -1,21 +1,33 @@
 import sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 
+documents = ["This is a silly example",
+             "A better example",
+             "Nothing to see here",
+             "This is a great and long example"]
+
+cv = CountVectorizer(lowercase=True, binary=True)
+sparse_matrix = cv.fit_transform(documents)
+dense_matrix = sparse_matrix.todense()
+
+td_matrix = dense_matrix.T  # .T transposes the matrix
+
+terms = cv.get_feature_names()
+sparse_td_matrix = sparse_matrix.T.tocsr()
+
+
+d = {"and": "&", "AND": "&",
+         "or": "|", "OR": "|",
+         "not": "1 -", "NOT": "1 -",
+         "(": "(", ")": ")"}  # operator replacements
+t2i = cv.vocabulary_  # shorter notation: t2i = term-to-index
+
 def main():
 
 
-    documents = ["This is a silly example",
-                 "A better example",
-                 "Nothing to see here",
-                 "This is a great and long example"]
 
-    cv = CountVectorizer(lowercase=True, binary=True)
-    sparse_matrix = cv.fit_transform(documents)
-    dense_matrix = sparse_matrix.todense()
 
-    td_matrix = dense_matrix.T  # .T transposes the matrix
 
-    terms = cv.get_feature_names()
 
     #print("First term (with row index 0):", terms[0])
     #print("Third term (with row index 2):", terms[2])
@@ -26,7 +38,7 @@ def main():
     #print("Row index of 'example':", cv.vocabulary_["example"])
     #print("Row index of 'silly':", cv.vocabulary_["silly"])
 
-    t2i = cv.vocabulary_  # shorter notation: t2i = term-to-index
+
     #print("Query: example")
     #print(td_matrix[t2i["example"]])
 
@@ -34,10 +46,7 @@ def main():
     # Parentheses are left untouched
     # Everything else interpreted as a term and fed through td_matrix[t2i["..."]]
 
-    d = {"and": "&", "AND": "&",
-         "or": "|", "OR": "|",
-         "not": "1 -", "NOT": "1 -",
-         "(": "(", ")": ")"}  # operator replacements
+
 
     def rewrite_token(t):
         return d.get(t, 'td_matrix[t2i["{:s}"]]'.format(t))  # Can you figure out what happens here?
@@ -61,7 +70,7 @@ def main():
     print(sparse_matrix.tocsc())
     print(sparse_matrix.T)
 
-    sparse_td_matrix = sparse_matrix.T.tocsr()
+
     print(sparse_td_matrix)
 
     def rewrite_token(t):
