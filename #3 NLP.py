@@ -7,6 +7,15 @@ documents = ["This is a silly example",
              "Nothing to see here",
              "This is a great and long example"]
 
+import re
+import sklearn
+from sklearn.feature_extraction.text import CountVectorizer
+
+documents = ["This is a silly example",
+             "A better example",
+             "Nothing to see here",
+             "This is a great and long example"]
+
 cv = CountVectorizer(lowercase=True, binary=True)
 sparse_matrix = cv.fit_transform(documents)
 dense_matrix = sparse_matrix.todense()
@@ -26,7 +35,7 @@ t2i = cv.vocabulary_  # shorter notation: t2i = term-to-index
 def main():
 
 
-    corpus = open("corpus/wikicorpus.txt", "r")
+    corpus = open("corpus/wikicorpus.txt", "r", encoding='UTF-8')
     articles_str = ""
     for line in corpus:
         if re.search(r'<article name="', line):
@@ -80,7 +89,7 @@ def main():
         print()
 
 
-    if check_for_unknown_words(query) == True:
+    if check_for_unknown_words(query):
         test_query(query)
         #test_query("NOT example OR great")
         #test_query("( NOT example OR great ) AND nothing")  # AND, OR, NOT can be written either in ALLCAPS
