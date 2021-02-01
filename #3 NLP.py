@@ -1,39 +1,8 @@
-import re
-import sklearn
+import re, sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 
-documents = ["This is a silly example",
-             "A better example",
-             "Nothing to see here",
-             "This is a great and long example"]
-
-import re
-import sklearn
-from sklearn.feature_extraction.text import CountVectorizer
-
-documents = ["This is a silly example",
-             "A better example",
-             "Nothing to see here",
-             "This is a great and long example"]
-
-cv = CountVectorizer(lowercase=True, binary=True)
-sparse_matrix = cv.fit_transform(documents)
-dense_matrix = sparse_matrix.todense()
-
-td_matrix = dense_matrix.T  # .T transposes the matrix
-
-terms = cv.get_feature_names()
-sparse_td_matrix = sparse_matrix.T.tocsr()
-
-
-d = {"and": "&", "AND": "&",
-         "or": "|", "OR": "|",
-         "not": "1 -", "NOT": "1 -",
-         "(": "(", ")": ")"}  # operator replacements
-t2i = cv.vocabulary_  # shorter notation: t2i = term-to-index
 
 def main():
-
 
     corpus = open("corpus/wikicorpus.txt", "r", encoding='UTF-8')
     articles_str = ""
@@ -44,49 +13,50 @@ def main():
            articles_str += no_tags_2
         else:
            articles_str += line
+    global articles
     articles = articles_str.split("</article>")
+    articles.pop()
 
 
-    #print("First term (with row index 0):", terms[0])
-    #print("Third term (with row index 2):", terms[2])
+    cv = CountVectorizer(lowercase=True, binary=True)
+    cv._validate_vocabulary()
+    sparse_matrix = cv.fit_transform(articles)
+    dense_matrix = sparse_matrix.todense()
 
-    #print("\nterm -> IDX mapping:\n")
-    #print(cv.vocabulary_)  # note the _ at the end
+    td_matrix = dense_matrix.T
 
-    #print("Row index of 'example':", cv.vocabulary_["example"])
-    #print("Row index of 'silly':", cv.vocabulary_["silly"])
+    terms = cv.get_feature_names()
+    global sparse_td_matrix
+    sparse_td_matrix = sparse_matrix.T.tocsr()
+
+    global d
+    d = {"and": "&", "AND": "&",
+         "or": "|", "OR": "|",
+         "not": "1 -", "NOT": "1 -",
+         "(": "(", ")": ")"}  # operator replacements
+    
+    global t2i
+    t2i = cv.vocabulary_
+
+    retrieve_articles()
+
+def check_for_unknown_words(query):
+
+    tokens = query.split()
+    for t in tokens:
+        if t not in terms and t not in d.keys():
+            print('Word "{}" is not found in corpus'.format(t))
+            return False
+    return True
 
 
-    #print("Query: example")
-    #print(td_matrix[t2i["example"]])
+def rewrite_query(query):  # rewrite every token in the query
+    return " ".join(rewrite_token(t) for t in query.split())
 
-    # Operators and/AND, or/OR, not/NOT become &, |, 1 -
-    # Parentheses are left untouched
-    # Everything else interpreted as a term and fed through td_matrix[t2i["..."]]
-
-    query = "example OR nothing"
-
-    def check_for_unknown_words(query):
-
-        tokens = query.split()
-        for t in tokens:
-            if t not in terms and t not in d.keys():
-                print('Word "{}" is not found in corpus'.format(t))
-                return False
-        return True
-
-
-    def rewrite_token(t):
-        return d.get(t, 'td_matrix[t2i["{:s}"]]'.format(t))  # Can you figure out what happens here?
-
-    def rewrite_query(query):  # rewrite every token in the query
-        return " ".join(rewrite_token(t) for t in query.split())
-
-    def test_query(query):
-        print("Query: '" + query + "'")
-        print("Rewritten:", rewrite_query(query))
-        print("Matching:", eval(rewrite_query(query)))  # Eval runs the string as a Python command
-        print()
+def test_query(query):
+    print("Query: '" + query + "'")
+    print("Rewritten:", rewrite_query(query))
+    print("Matching:", eval(rewrite_query(query)))  # Eval runs the string as a Python command
 
 
     if check_for_unknown_words(query):
@@ -103,11 +73,13 @@ def main():
 
     print(sparse_td_matrix)
 
-    def rewrite_token(t):
-        return d.get(t, 'sparse_td_matrix[t2i["{:s}"]].todense()'.format(t))
+def rewrite_token(t):
+    return d.get(t, 'sparse_td_matrix[t2i["{:s}"]].todense()'.format(t))
 
     test_query("NOT example OR great")
 
+
+def retrieve_articles():
     hits_matrix = eval(rewrite_query("NOT example OR great"))
     print("Matching documents as vector (it is actually a matrix with one single row):", hits_matrix)
     print("The coordinates of the non-zero elements:", hits_matrix.nonzero())
@@ -115,11 +87,9 @@ def main():
     hits_list = list(hits_matrix.nonzero()[1])
     print(hits_list)
 
-    for doc_idx in hits_list:
-        print("Matching doc:", documents[doc_idx])
-
     for i, doc_idx in enumerate(hits_list):
-        print("Matching doc #{:d}: {:s}".format(i, documents[doc_idx]))
+        first_line = articles[doc_idx].split()
+        print("Matching doc #{:d}: {:s}".format(i, first_line[0]))
 
 
 main()
