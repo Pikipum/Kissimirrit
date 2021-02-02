@@ -60,7 +60,7 @@ def test_query(query):
 
 
     if check_for_unknown_words(query):
-        test_query(query)
+       test_query(query)
         #test_query("NOT example OR great")
         #test_query("( NOT example OR great ) AND nothing")  # AND, OR, NOT can be written either in ALLCAPS
         #test_query("( not example or great ) and nothing")  # ... or all small letters
@@ -88,8 +88,12 @@ def retrieve_articles():
     print(hits_list)
 
     for i, doc_idx in enumerate(hits_list):
-        first_line = articles[doc_idx].split()
-        print("Matching doc #{:d}: {:s}".format(i, first_line[0]))
+        if doc_idx == 0:
+           lines = articles[doc_idx].split("\n")
+           print("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[0], lines[1]))
+        else:
+           lines = articles[doc_idx].split("\n")
+           print("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[1], lines[2]))
 
 
 main()
