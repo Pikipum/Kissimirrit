@@ -60,7 +60,7 @@ def test_query(query):
 
 
     if check_for_unknown_words(query):
-       test_query(query)
+        test_query(query)
         #test_query("NOT example OR great")
         #test_query("( NOT example OR great ) AND nothing")  # AND, OR, NOT can be written either in ALLCAPS
         #test_query("( not example or great ) and nothing")  # ... or all small letters
@@ -80,12 +80,15 @@ def rewrite_token(t):
 
 
 def retrieve_articles():
-    hits_matrix = eval(rewrite_query("NOT example OR great"))
-    print("Matching documents as vector (it is actually a matrix with one single row):", hits_matrix)
-    print("The coordinates of the non-zero elements:", hits_matrix.nonzero())
+
+    inp = input("Search for a document: ") # asks user for input
+
+    hits_matrix = eval(rewrite_query(inp)) # feeds the user input into rewriting
+    #print("Matching documents as vector (it is actually a matrix with one single row):", hits_matrix)
+    #print("The coordinates of the non-zero elements:", hits_matrix.nonzero())
 
     hits_list = list(hits_matrix.nonzero()[1])
-    print(hits_list)
+    #print(hits_list)
 
     for i, doc_idx in enumerate(hits_list):
         if doc_idx == 0:
