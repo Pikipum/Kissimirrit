@@ -25,6 +25,7 @@ def main():
 
     td_matrix = dense_matrix.T
 
+    global terms
     terms = cv.get_feature_names()
     global sparse_td_matrix
     sparse_td_matrix = sparse_matrix.T.tocsr()
@@ -51,9 +52,11 @@ def check_for_unknown_words(query):
 
 
 def rewrite_query(query):  # rewrite every token in the query
+
     return " ".join(rewrite_token(t) for t in query.split())
 
 def test_query(query):
+
     print("Query: '" + query + "'")
     print("Rewritten:", rewrite_query(query))
     print("Matching:", eval(rewrite_query(query)))  # Eval runs the string as a Python command
@@ -74,29 +77,25 @@ def test_query(query):
     print(sparse_td_matrix)
 
 def rewrite_token(t):
-    return d.get(t, 'sparse_td_matrix[t2i["{:s}"]].todense()'.format(t))
-
-    test_query("NOT example OR great")
+    
+     return d.get(t, 'sparse_td_matrix[t2i["{:s}"]].todense()'.format(t))
 
 
 def retrieve_articles():
 
     inp = input("Search for a document: ") # asks user for input
+    
+    if check_for_unknown_words(inp) == True:
+        hits_matrix = eval(rewrite_query(inp)) # feeds the user input into rewriting
+        hits_list = list(hits_matrix.nonzero()[1])
 
-    hits_matrix = eval(rewrite_query(inp)) # feeds the user input into rewriting
-    #print("Matching documents as vector (it is actually a matrix with one single row):", hits_matrix)
-    #print("The coordinates of the non-zero elements:", hits_matrix.nonzero())
-
-    hits_list = list(hits_matrix.nonzero()[1])
-    #print(hits_list)
-
-    for i, doc_idx in enumerate(hits_list):
-        if doc_idx == 0:
-           lines = articles[doc_idx].split("\n")
-           print("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[0], lines[1]))
-        else:
-           lines = articles[doc_idx].split("\n")
-           print("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[1], lines[2]))
+        for i, doc_idx in enumerate(hits_list):
+           if doc_idx == 0:
+               lines = articles[doc_idx].split("\n")
+               print("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[0], lines[1]))
+           else:
+               lines = articles[doc_idx].split("\n")
+               print("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[1], lines[2]))
 
 
 main()
