@@ -3,9 +3,11 @@ from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
+from nltk.stem.snowball import SnowballStemmer
 
 
 def main():
+  
     corpus = open("corpus/wikicorpus.txt", "r", encoding='UTF-8')
 
     articles_str = ""
@@ -14,12 +16,14 @@ def main():
             no_tags = re.sub(r'<article name="', "", line)
             no_tags_2 = re.sub(r'">', "", no_tags)
             articles_str += no_tags_2
+            
         else:
             articles_str += line
 
     global articles
     articles = articles_str.split("</article>")
-
+    
+    global corpus_with_names
     corpus_with_names = {}
     for article in articles:
         lines = article.split('\n')
@@ -33,6 +37,11 @@ def main():
     global articlenames, gv, g_matrix
     articlenames = list(corpus_with_names.keys())
     articledata = list(corpus_with_names[name] for name in articlenames)
+    
+    documents = stem_documents()
+    article_names = list(documents.keys())
+    stemmed_data = list(documents[name] for name in article_names)
+
 
     gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
     g_matrix = gv.fit_transform(articledata).T.tocsr()
@@ -57,6 +66,7 @@ def main():
 
     global t2i
     t2i = cv.vocabulary_
+      
 
     while True:
         boolean = 0
@@ -121,5 +131,19 @@ def search_wikicorpus(query_string):
     for i, (score, doc_idx) in enumerate(ranked_scores_and_doc_ids):
         print("Doc #{:d} (score: {:.4f}): {:s}".format(i, score, articlenames[doc_idx]))
     print()
+   
+def stem_documents():
+
+    stemmer = SnowballStemmer("english")
+ 
+    stemmed_articles = {}
+
+    for article in corpus_with_names:
+         tokens = corpus_with_names[article].split()
+         stemmed_data = ' '.join(stemmer.stem(t) for t in tokens)
+         stemmed_articles[article] = stemmed_data
+
+    return stemmed_articles
+    
 
 main()
