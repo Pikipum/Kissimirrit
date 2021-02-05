@@ -58,14 +58,19 @@ def main():
     global t2i
     t2i = cv.vocabulary_
 
-    inp = input("Search for a document: ")  # asks user for input
-    while inp != '':
+    while True:
+        boolean = 0
+        inp = input("Search for a document: ")  # asks user for input
+        if inp == '':
+            break
         if check_for_unknown_words(inp) == True:
-            retrieve_articles(inp)
-            search_wikicorpus(inp)
-            inp = input("Search for another document: ")
-        else:
-            inp = input("Search for another document: ")
+            for t in inp.split():
+                if t in d.keys():
+                    retrieve_articles(inp)
+                    boolean += 1
+                    break
+            if boolean == 0:
+                search_wikicorpus(inp)
 
 
 def check_for_unknown_words(query):
