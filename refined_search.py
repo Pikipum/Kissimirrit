@@ -5,7 +5,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
 from nltk.stem.snowball import SnowballStemmer
 
-
 def main():
   
     corpus = open("corpus/wikicorpus.txt", "r", encoding='UTF-8')
@@ -47,13 +46,13 @@ def main():
     g_matrix = gv.fit_transform(articledata).T.tocsr()
 
     cv = CountVectorizer(lowercase=True, binary=True)
-    cv._validate_vocabulary()
+    gv._validate_vocabulary()
     sparse_matrix = cv.fit_transform(articles)
     binary_dense_matrix = cv.fit_transform(articles).T.todense()
     dense_matrix = cv.fit_transform(articles).T.todense()
 
     global terms
-    terms = cv.get_feature_names()
+    terms = gv.get_feature_names()
 
     global sparse_td_matrix
     sparse_td_matrix = sparse_matrix.T.tocsr()
@@ -79,8 +78,14 @@ def main():
                     retrieve_articles(inp)
                     boolean += 1
                     break
-            if boolean == 0:
+            if boolean == 0 and len(inp.split()) == 1:
                 search_wikicorpus(inp)
+            elif boolean == 0:
+                term = inp.split()
+                gv.ngram_range = (len(term), len(term))
+                g_matrix = gv.fit_transform(articledata).T.tocsr()
+                search_wikicorpus(inp)
+                
 
 
 def check_for_unknown_words(query):
