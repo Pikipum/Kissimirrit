@@ -38,15 +38,27 @@ def main():
     articledata = list(corpus_with_names[name] for name in articlenames)
 
 
-
+    global stemmer
+    stemmer = SnowballStemmer("english")
 
     documents = stem_documents()
     article_names = list(documents.keys())
     stemmed_data = list(documents[name] for name in article_names)
 
+    global both_versions
+    both_versions = {}  # dictionary with both normal and stemmed articles
+
+    for article in corpus_with_names:
+         tokens_2 = corpus_with_names[article].split()
+         stemmed_data_2 = ' '.join(stemmer.stem(t) for t in tokens_2)
+         both_versions[article] = corpus_with_names[article] + stemmed_data_2
+
+    both_names = list(both_versions.keys())
+    both_data = list(both_versions[name] for name in both_names)
+
 
     gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
-    g_matrix = gv.fit_transform(articledata).T.tocsr()
+    g_matrix = gv.fit_transform(both_data).T.tocsr()
 
     gv_stemmed = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
     g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr() # Create a separate matrix for the stemmed data
@@ -91,12 +103,19 @@ def main():
         inp = input("Search for a document: ")  # asks user for input
         if inp == '':
             break
-        if re.match('["][\w\s]+["]', inp): # Checks if input has quotation marks
+        both = ""
+        for each in inp.split():
+            if re.match('["][\w\s]+["]', each): # Checks if input has quotation marks
+                both += each.strip('"') + " "
+            else:
+                both += stemmer.stem(each) + " "
+
+            inp = both.strip()       
+
             inp = re.sub('"', '', inp) # Removes quotation marks
             stemmed = False # Sets the input to search unstemmed documents (exact matches)
 
         if stemmed == True: # Stem the query
-             stemmer = SnowballStemmer("english")
              stemmed_inp = " ".join(stemmer.stem(each) for each in inp.split()) # stems every word if query is a multi-word phrase
              inp = stemmed_inp
 
@@ -112,7 +131,7 @@ def main():
                     g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
                 else:
                     gv.ngram_range = (1, 1)
-                    g_matrix = gv.fit_transform(articledata).T.tocsr()
+                    g_matrix = gv.fit_transform(both_data).T.tocsr()
                 search_wikicorpus(inp, stemmed)
             elif boolean == 0:   # if the query is a multi-word phrase
                 term = inp.split()
@@ -121,7 +140,7 @@ def main():
                     g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
                 else:
                     gv.ngram_range = (len(term), len(term))        
-                    g_matrix = gv.fit_transform(articledata).T.tocsr()
+                    g_matrix = gv.fit_transform(both_data).T.tocsr()
                 search_wikicorpus(inp, stemmed)
                 
 
@@ -190,7 +209,6 @@ def search_wikicorpus(query_string, stemmed):
    
 def stem_documents():
 
-    stemmer = SnowballStemmer("english")
  
     stemmed_articles = {}
 
