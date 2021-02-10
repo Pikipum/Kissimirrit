@@ -72,7 +72,7 @@ def main():
         inp = input("Search for a document: ")  # asks user for input
         if inp == '':
             break
-        if re.match('["]\w+["]', inp): # Checks if input has quotation marks
+        if re.match('["][\w\s]+["]', inp): # Checks if input has quotation marks
             inp = re.sub('"', '', inp) # Removes quotation marks
 
         if check_for_unknown_words(inp) == True:
