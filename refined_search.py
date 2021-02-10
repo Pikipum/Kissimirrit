@@ -36,7 +36,7 @@ def main():
     global articlenames, gv, g_matrix
     articlenames = list(corpus_with_names.keys())
     articledata = list(corpus_with_names[name] for name in articlenames)
-    
+
     documents = stem_documents()
     article_names = list(documents.keys())
     stemmed_data = list(documents[name] for name in article_names)
@@ -72,6 +72,9 @@ def main():
         inp = input("Search for a document: ")  # asks user for input
         if inp == '':
             break
+        if re.match('["]\w+["]', inp): # Checks if input has quotation marks
+            inp = re.sub('"', '', inp) # Removes quotation marks
+
         if check_for_unknown_words(inp) == True:
             for t in inp.split():
                 if t in d.keys():
