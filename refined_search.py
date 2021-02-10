@@ -96,8 +96,9 @@ def main():
             stemmed = False # Sets the input to search unstemmed documents (exact matches)
 
         if stemmed == True: # Stem the query
-            stemmer = SnowballStemmer("english")
-            inp = stemmer.stem(inp)
+             stemmer = SnowballStemmer("english")
+             stemmed_inp = " ".join(stemmer.stem(each) for each in inp.split()) # stems every word if query is a multi-word phrase
+             inp = stemmed_inp
 
         if check_for_unknown_words(inp, stemmed) == True:
             for t in inp.split():
@@ -105,12 +106,22 @@ def main():
                     retrieve_articles(inp)
                     boolean += 1
                     break
-            if boolean == 0 and len(inp.split()) == 1:
+            if boolean == 0 and len(inp.split()) == 1:   # if the query consists of 1 word
+                if stemmed:
+                    gv_stemmed.ngram_range = (1, 1)
+                    g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
+                else:
+                    gv.ngram_range = (1, 1)
+                    g_matrix = gv.fit_transform(articledata).T.tocsr()
                 search_wikicorpus(inp, stemmed)
-            elif boolean == 0:
+            elif boolean == 0:   # if the query is a multi-word phrase
                 term = inp.split()
-                gv.ngram_range = (len(term), len(term))
-                g_matrix = gv.fit_transform(articledata).T.tocsr()
+                if stemmed:
+                    gv_stemmed.ngram_range = (len(term), len(term))
+                    g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
+                else:
+                    gv.ngram_range = (len(term), len(term))        
+                    g_matrix = gv.fit_transform(articledata).T.tocsr()
                 search_wikicorpus(inp, stemmed)
                 
 
