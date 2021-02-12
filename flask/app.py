@@ -6,14 +6,11 @@ import nltk
 from nltk.stem.snowball import SnowballStemmer
 from flask import Flask, render_template, request
 
-app = Flask(__name__)
 
-@app.route('/search')
-
-def search():
+def main():
   
     corpus = open("corpus/wikicorpus.txt", "r", encoding='UTF-8')
-
+   
     articles_str = ""
     for line in corpus:
         if re.search(r'<article name="', line):
@@ -45,7 +42,8 @@ def search():
 
     global stemmer
     stemmer = SnowballStemmer("english")
-
+    
+    global stemmed_data
     documents = stem_documents()
     article_names = list(documents.keys())
     stemmed_data = list(documents[name] for name in article_names)
@@ -59,14 +57,18 @@ def search():
          both_versions[article] = corpus_with_names[article] + stemmed_data_2
 
     both_names = list(both_versions.keys())
+    global both_data
     both_data = list(both_versions[name] for name in both_names)
 
 
     gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
     g_matrix = gv.fit_transform(both_data).T.tocsr()
-
+  
+    global gv_stemmed
     gv_stemmed = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
-    g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr() # Create a separate matrix for the stemmed data
+
+    global g_matrix_stemmed
+    g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
 
 
     cv = CountVectorizer(lowercase=True, binary=True)
@@ -87,12 +89,13 @@ def search():
 
     global d
     d = {"and": "&", "AND": "&",
-         "or": "|", "OR": "|",
-         "not": "1 -", "NOT": "1 -",
-         "(": "(", ")": ")"}  # operator replacements
-
+     "or": "|", "OR": "|",
+     "not": "1 -", "NOT": "1 -",
+     "(": "(", ")": ")"}  # operator replacements
+ 
     global t2i
     t2i = cv.vocabulary_
+
 
 #    query_stemmed = input("Search stemmed documents? y/n: ")  # Asks whether user would like to search stemmed results
 #    if query_stemmed == "y":
@@ -100,56 +103,62 @@ def search():
 #    else:
 #        stemmed = False
 
+app = Flask(__name__)
 
-   # while True:
-    global matches
-    matches = []
-    stemmed = True
-    boolean = 0
-    inp = request.args.get('query')
+@app.route('/search')
+
+def search():
+
+        main()
+
+    #while True:
+        global matches
+        matches = []
+        stemmed = True
+        boolean = 0
+        inp = request.args.get('query')
        # inp = input("Search for a document: ")  # asks user for input
-    if inp:
+        if inp:
      #   break
-        both = ""
-        for each in inp.split():
-            if re.match('["][\w\s]+["]', each): # Checks if input has quotation marks
-                both += each.strip('"') + " "
-            else:
-                both += stemmer.stem(each) + " "
+            both = ""
+            for each in inp.split():
+                if re.match('["][\w\s]+["]', each): # Checks if input has quotation marks
+                    both += each.strip('"') + " "
+                    stemmed = False # Sets the input to search unstemmed documents (exact matches)
+                else:
+                    both += stemmer.stem(each) + " "
 
-            inp = both.strip()       
+                inp = both.strip()       
+                inp = re.sub('"', '', inp) # Removes quotation marks
 
-            inp = re.sub('"', '', inp) # Removes quotation marks
-            stemmed = False # Sets the input to search unstemmed documents (exact matches)
+            if stemmed == True: # Stem the query
+                stemmed_inp = " ".join(stemmer.stem(each) for each in inp.split()) # stems every word if query is a multi-word phrase
+                inp = stemmed_inp
 
-        if stemmed == True: # Stem the query
-            stemmed_inp = " ".join(stemmer.stem(each) for each in inp.split()) # stems every word if query is a multi-word phrase
-            inp = stemmed_inp
-
-        if check_for_unknown_words(inp, stemmed) == True:
-           for t in inp.split():
-               if t in d.keys():
-                   retrieve_articles(inp)
-                   boolean += 1
-                   break
-           if boolean == 0 and len(inp.split()) == 1:   # if the query consists of 1 word
-               if stemmed:
-                   gv_stemmed.ngram_range = (1, 1)
-                   g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()            
-               else:
-                   gv.ngram_range = (1, 1)
-                   g_matrix = gv.fit_transform(both_data).T.tocsr()
-               search_wikicorpus(inp, stemmed)
-           elif boolean == 0:   # if the query is a multi-word phrase
-               term = inp.split()
-               if stemmed:
-                   gv_stemmed.ngram_range = (len(term), len(term))
-                   g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
-               else:
-                   gv.ngram_range = (len(term), len(term))        
-                   g_matrix = gv.fit_transform(both_data).T.tocsr()
-               search_wikicorpus(inp, stemmed)
-    return render_template('index.html', matches=matches)          
+            if check_for_unknown_words(inp, stemmed) == True:
+               for t in inp.split():
+                   if t in d.keys():
+                       retrieve_articles(inp)
+                       boolean += 1
+                       break
+               if boolean == 0 and len(inp.split()) == 1:   # if the query consists of 1 word
+                   if stemmed:
+                       gv_stemmed.ngram_range = (1, 1)
+                       g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()            
+                   else:
+                       gv.ngram_range = (1, 1)
+                       g_matrix = gv.fit_transform(both_data).T.tocsr()
+                   search_wikicorpus(inp, stemmed)
+               elif boolean == 0:  
+                   term = inp.split()
+                   if stemmed:
+                       gv_stemmed.ngram_range = (len(term), len(term))
+                       g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
+                   else:
+                       gv.ngram_range = (len(term), len(term))        
+                       g_matrix = gv.fit_transform(both_data).T.tocsr()
+                   search_wikicorpus(inp, stemmed)
+        return render_template('index.html', matches=matches)          
 
 
 def check_for_unknown_words(query, stemmed):
@@ -230,4 +239,4 @@ def stem_documents():
     return stemmed_articles
     
 
-#search()
+
