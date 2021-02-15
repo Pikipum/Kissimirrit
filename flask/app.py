@@ -60,32 +60,11 @@ def main():
     global both_data
     both_data = list(both_versions[name] for name in both_names)
 
-
-    gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
-    g_matrix = gv.fit_transform(both_data).T.tocsr()
-  
-    global gv_stemmed
-    gv_stemmed = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
-
-    global g_matrix_stemmed
-    g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
-
-
+    global sparse_matrix
     cv = CountVectorizer(lowercase=True, binary=True)
-    gv._validate_vocabulary()
-    gv_stemmed._validate_vocabulary() # Validate stemmed vocabulary
     sparse_matrix = cv.fit_transform(articles)
     binary_dense_matrix = cv.fit_transform(articles).T.todense()
     dense_matrix = cv.fit_transform(articles).T.todense()
-
-    global terms
-    terms = gv.get_feature_names()
-
-    global stemmed_terms
-    stemmed_terms = gv_stemmed.get_feature_names() # Get the stemmed feature names
-
-    global sparse_td_matrix
-    sparse_td_matrix = sparse_matrix.T.tocsr()
 
     global d
     d = {"and": "&", "AND": "&",
@@ -111,6 +90,21 @@ def search():
 
         main()
 
+        global gv, g_matrix, gv_stemmed, g_matrix_stemmed, terms, stemmed_terms, sparse_td_matrix
+        gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
+        g_matrix = gv.fit_transform(both_data).T.tocsr()
+  
+        gv_stemmed = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
+        g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
+
+        gv._validate_vocabulary()
+        gv_stemmed._validate_vocabulary() # Validate stemmed vocabulary
+
+        terms = gv.get_feature_names()
+        stemmed_terms = gv_stemmed.get_feature_names() # Get the stemmed feature names
+        sparse_td_matrix = sparse_matrix.T.tocsr()
+        
+
     #while True:
         global matches
         matches = []
@@ -122,7 +116,7 @@ def search():
      #   break
             both = ""
             for each in inp.split():
-                if re.match('["][\w\s]+["]', each): # Checks if input has quotation marks
+                if re.match('["][\w\s]+|[\w\s]+["]|["][\w\s]+["]', each): # Checks if input has quotation marks
                     both += each.strip('"') + " "
                     stemmed = False # Sets the input to search unstemmed documents (exact matches)
                 else:
@@ -135,29 +129,26 @@ def search():
                 stemmed_inp = " ".join(stemmer.stem(each) for each in inp.split()) # stems every word if query is a multi-word phrase
                 inp = stemmed_inp
 
-            if check_for_unknown_words(inp, stemmed) == True:
-               for t in inp.split():
-                   if t in d.keys():
-                       retrieve_articles(inp)
-                       boolean += 1
-                       break
-               if boolean == 0 and len(inp.split()) == 1:   # if the query consists of 1 word
-                   if stemmed:
-                       gv_stemmed.ngram_range = (1, 1)
-                       g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()            
-                   else:
-                       gv.ngram_range = (1, 1)
-                       g_matrix = gv.fit_transform(both_data).T.tocsr()
-                   search_wikicorpus(inp, stemmed)
-               elif boolean == 0:  
-                   term = inp.split()
-                   if stemmed:
-                       gv_stemmed.ngram_range = (len(term), len(term))
-                       g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
-                   else:
-                       gv.ngram_range = (len(term), len(term))        
-                       g_matrix = gv.fit_transform(both_data).T.tocsr()
-                   search_wikicorpus(inp, stemmed)
+            for t in inp.split(): # checks for any boolean operators
+                if t in d.keys():
+                    boolean += 1
+                    break
+
+            if boolean != 0 and check_for_unknown_words(inp, stemmed): 
+                retrieve_articles(inp)
+              
+            if boolean == 0:  
+                term = inp.split()
+                if stemmed:
+                    gv_stemmed.ngram_range = (len(term), len(term))
+                    g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
+                else:
+                    gv.ngram_range = (len(term), len(term))        
+                    g_matrix = gv.fit_transform(both_data).T.tocsr()
+ 
+                if check_for_unknown_words(inp, stemmed) == True:
+                    search_wikicorpus(inp, stemmed)
+
         return render_template('index.html', matches=matches)          
 
 
@@ -166,13 +157,13 @@ def check_for_unknown_words(query, stemmed):
     if stemmed: # If stemmed is true, searches the stemmed terms. Otherwise continue to the unstemmed documents.
         for t in tokens:
             if t not in stemmed_terms and t not in d.keys():
-                print('Word "{}" is not found in corpus'.format(t))
                 # return ([0 0 0 0]) <-- add len(articles)
+                matches.append('Word "{}" is not found in corpus'.format(t))
                 return False
     else:
         for t in tokens:
             if t not in terms and t not in d.keys():
-                print('Word "{}" is not found in corpus'.format(t))
+                matches.append('Word "{}" is not found in corpus'.format(t))
                 #return ([0 0 0 0]) <-- add len(articles)
                 return False
     return True
