@@ -4,6 +4,39 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
 from nltk.stem.snowball import SnowballStemmer
+from flask import Flask, render_template, request
+
+#Initialize Flask instance
+app = Flask(__name__)
+
+example_data = [
+    {'name': 'Cat sleeping on a bed', 'source': 'cat.jpg'},
+    {'name': 'Misty forest', 'source': 'forest.jpg'},
+    {'name': 'Bonfire burning', 'source': 'fire.jpg'},
+    {'name': 'Old library', 'source': 'library.jpg'},
+    {'name': 'Sliced orange', 'source': 'orange.jpg'}
+]
+
+#Function search() is associated with the address base URL + "/search"
+@app.route('/search')
+def search():
+
+    #Get query from URL variable
+    query = request.args.get('query')
+
+    #Initialize list of matches
+    matches = []
+
+    #If query exists (i.e. is not None)
+    if query:
+        #Look at each entry in the example data
+        for entry in example_data:
+            #If an entry name contains the query, add the entry to matches
+            if query.lower() in entry['name'].lower():
+                matches.append(entry)
+
+    #Render index.html with matches variable
+    return render_template('wiki.html', matches=matches)
 
 def main():
   
@@ -151,13 +184,11 @@ def check_for_unknown_words(query, stemmed):
         for t in tokens:
             if t not in stemmed_terms and t not in d.keys():
                 print('Word "{}" is not found in corpus'.format(t))
-                # return ([0 0 0 0]) <-- add len(articles)
                 return False
     else:
         for t in tokens:
             if t not in terms and t not in d.keys():
                 print('Word "{}" is not found in corpus'.format(t))
-                #return ([0 0 0 0]) <-- add len(articles)
                 return False
     return True
 

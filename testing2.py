@@ -3,8 +3,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 
 booknames = nltk.corpus.gutenberg.fileids()
+#print(booknames)
 
 bookdata = list(nltk.corpus.gutenberg.raw(name) for name in booknames)
+#print(bookdata[0])
 
 print("There are", len(bookdata), "books in the collection:", booknames)
 

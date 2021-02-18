@@ -6,7 +6,6 @@ import nltk
 from nltk.stem.snowball import SnowballStemmer
 from flask import Flask, render_template, request
 
-
 def main():
   
     corpus = open("corpus/wikicorpus.txt", "r", encoding='UTF-8')
@@ -86,6 +85,7 @@ app = Flask(__name__)
 
 @app.route('/search')
 
+
 def search():
 
         main()
@@ -134,9 +134,9 @@ def search():
                     boolean += 1
                     break
 
-            if boolean != 0 and check_for_unknown_words(inp, stemmed): 
-                retrieve_articles(inp)
-              
+            if boolean != 0 and check_for_unknown_words(inp, stemmed):
+                    search_wikicorpus(inp, stemmed)
+
             if boolean == 0:  
                 term = inp.split()
                 if stemmed:
@@ -149,7 +149,14 @@ def search():
                 if check_for_unknown_words(inp, stemmed) == True:
                     search_wikicorpus(inp, stemmed)
 
-        return render_template('index.html', matches=matches)          
+
+            og_inp = request.args.get('query')                              # retrieve_articles() doesnt work with stems (yet)
+            try:
+                retrieve_articles(og_inp)                                   # Prints the first few lines if there are exact matches in the articles
+            except KeyError:
+                pass
+
+        return render_template('index.html', matches=matches)
 
 
 def check_for_unknown_words(query, stemmed):
@@ -157,14 +164,12 @@ def check_for_unknown_words(query, stemmed):
     if stemmed: # If stemmed is true, searches the stemmed terms. Otherwise continue to the unstemmed documents.
         for t in tokens:
             if t not in stemmed_terms and t not in d.keys():
-                # return ([0 0 0 0]) <-- add len(articles)
                 matches.append('Word "{}" is not found in corpus'.format(t))
                 return False
     else:
         for t in tokens:
             if t not in terms and t not in d.keys():
                 matches.append('Word "{}" is not found in corpus'.format(t))
-                #return ([0 0 0 0]) <-- add len(articles)
                 return False
     return True
 
@@ -186,11 +191,11 @@ def retrieve_articles(inp):
         if doc_idx == 0:
             lines = articles[doc_idx].split("\n")
            # print("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[0], lines[1]))
-            matches.append("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[0], lines[1]))
+            matches.append("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[0].upper(), lines[1]))
         else:
             lines = articles[doc_idx].split("\n")
           #  print("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[1], lines[2]))
-            matches.append("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[1], lines[2]))
+            matches.append("Matching doc #{:d}: {:s}\n {:s}\n".format(i, lines[1].upper(), lines[2]))
 
 def search_wikicorpus(query_string, stemmed):
 
@@ -230,4 +235,4 @@ def stem_documents():
     return stemmed_articles
     
 
-
+#app.run('127.0.0.1', debug=True)
