@@ -137,27 +137,25 @@ def search():
                     boolean += 1
                     break
 
-            if boolean != 0 and check_for_unknown_words(inp, stemmed):
-                    search_wikicorpus(inp, stemmed)
+        if boolean == 0:
+            term = inp.split()
+            if stemmed:
+                gv_stemmed.ngram_range = (len(term), len(term))
+                g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
+            else:
+                gv.ngram_range = (len(term), len(term))
+                g_matrix = gv.fit_transform(both_data).T.tocsr()
+        try:
+            #           if check_for_unknown_words(inp, stemmed) == True:
+            search_wikicorpus(inp, stemmed)
+        except KeyError:
+            pass
 
-            if boolean == 0:  
-                term = inp.split()
-                if stemmed:
-                    gv_stemmed.ngram_range = (len(term), len(term))
-                    g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
-                else:
-                    gv.ngram_range = (len(term), len(term))        
-                    g_matrix = gv.fit_transform(both_data).T.tocsr()
- 
-                if check_for_unknown_words(inp, stemmed) == True:
-                    search_wikicorpus(inp, stemmed)
-
-
-            og_inp = request.args.get('query')                              # retrieve_articles() doesnt work with stems (yet)
-            try:
-                retrieve_articles(og_inp)                                   # Prints the first few lines if there are exact matches in the articles
-            except KeyError:
-                pass
+        og_inp = request.args.get('query')  # retrieve_articles() doesnt work with stems (yet)
+        try:
+            retrieve_articles(og_inp)  # Prints the first few lines if there are exact matches in the articles
+        except KeyError:
+            pass
 
         return render_template('index.html', matches=matches)
 
@@ -236,6 +234,7 @@ def search_wikicorpus(query_string, stemmed):
 
 
     plt.figure()
+    #  ax = fig.add_axes([0,0,1,1])
     if len(plot_articles) > 5:
         plt.bar(plot_articles[0:5], plot_scores[0:5])
     else:
