@@ -5,6 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
 from nltk.stem.snowball import SnowballStemmer
 from flask import Flask, render_template, request
+import matplotlib.pyplot as plt
 
 def main():
   
@@ -55,9 +56,11 @@ def main():
          stemmed_data_2 = ' '.join(stemmer.stem(t) for t in tokens_2)
          both_versions[article] = corpus_with_names[article] + stemmed_data_2
 
+    global both_names
     both_names = list(both_versions.keys())
     global both_data
     both_data = list(both_versions[name] for name in both_names)
+
 
     global sparse_matrix
     cv = CountVectorizer(lowercase=True, binary=True)
@@ -221,6 +224,23 @@ def search_wikicorpus(query_string, stemmed):
         matches.append("Doc #{:d} (score: {:.4f}): {:s}".format(i, score, articlenames[doc_idx]))
        # print("Doc #{:d} (score: {:.4f}): {:s}".format(i, score, articlenames[doc_idx]))
    # print()
+
+    plot_articles = []
+    plot_scores = []
+    for score, name in ranked_scores_and_doc_ids:
+        plot_articles.append(both_names[name])
+        plot_scores.append(score)
+
+
+    plt.figure()
+  #  ax = fig.add_axes([0,0,1,1])
+    if len(plot_articles) > 5:
+        plt.bar(plot_articles[0:5], plot_scores[0:5])
+    else:
+        plt.bar(plot_articles, plot_scores)
+    plt.title("Articles and their scores")
+    plt.savefig("test.png")
+
    
 def stem_documents():
 
@@ -235,4 +255,4 @@ def stem_documents():
     return stemmed_articles
     
 
-#app.run('127.0.0.1', debug=True)
+app.run('127.0.0.1', debug=True)
