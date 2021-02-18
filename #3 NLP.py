@@ -13,16 +13,15 @@ def main():
         else:
             articles_str += line
     global articles
+
     articles = articles_str.split("</article>")
     articles.pop()
 
     cv = CountVectorizer(lowercase=True, binary=True)
     cv._validate_vocabulary()
     sparse_matrix = cv.fit_transform(articles)
-
     global terms
     terms = cv.get_feature_names()
-
     global sparse_td_matrix
     sparse_td_matrix = sparse_matrix.T.tocsr()
 
