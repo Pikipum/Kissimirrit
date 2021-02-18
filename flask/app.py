@@ -225,6 +225,9 @@ def search_wikicorpus(query_string, stemmed):
        # print("Doc #{:d} (score: {:.4f}): {:s}".format(i, score, articlenames[doc_idx]))
    # print()
 
+
+    #Creates a plot and saves it in test.png.
+    #Still need to show it in the HTML page.
     plot_articles = []
     plot_scores = []
     for score, name in ranked_scores_and_doc_ids:
@@ -233,13 +236,12 @@ def search_wikicorpus(query_string, stemmed):
 
 
     plt.figure()
-  #  ax = fig.add_axes([0,0,1,1])
     if len(plot_articles) > 5:
         plt.bar(plot_articles[0:5], plot_scores[0:5])
     else:
         plt.bar(plot_articles, plot_scores)
     plt.title("Articles and their scores")
-    plt.savefig("test.png")
+    plt.savefig("templates/test.png")
 
    
 def stem_documents():
