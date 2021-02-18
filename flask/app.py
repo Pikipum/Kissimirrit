@@ -137,6 +137,9 @@ def search():
                     boolean += 1
                     break
 
+        if boolean != 0 and check_for_unknown_words(inp, stemmed):
+            search_wikicorpus(inp, stemmed)
+
         if boolean == 0:
             term = inp.split()
             if stemmed:
@@ -145,11 +148,9 @@ def search():
             else:
                 gv.ngram_range = (len(term), len(term))
                 g_matrix = gv.fit_transform(both_data).T.tocsr()
-        try:
-            #           if check_for_unknown_words(inp, stemmed) == True:
-            search_wikicorpus(inp, stemmed)
-        except KeyError:
-            pass
+
+            if check_for_unknown_words(inp, stemmed) == True:
+                search_wikicorpus(inp, stemmed)
 
         og_inp = request.args.get('query')  # retrieve_articles() doesnt work with stems (yet)
         try:
