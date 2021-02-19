@@ -9,52 +9,56 @@ import matplotlib.pyplot as plt
 
 def main():
   
-    corpus = open("corpus/wikicorpus.txt", "r", encoding='UTF-8')
-   
-    articles_str = ""
-    for line in corpus:
-        if re.search(r'<article name="', line):
-            no_tags = re.sub(r'<article name="', "", line)
-            no_tags_2 = re.sub(r'">', "", no_tags)
-            articles_str += no_tags_2
-            
-        else:
-            articles_str += line
+    with open("corpus/wikicorpus.txt", "r", encoding='UTF-8') as corpus:
+        articles_str = ""
+        for line in corpus:
+            if re.search(r'<article name="', line):
+                no_tags = re.sub(r'<article name="', "", line)
+                no_tags_2 = re.sub(r'">', "", no_tags)
+                articles_str += no_tags_2
+            else:
+                articles_str += line
 
-    global articles
+    global articles, stemmer
     articles = articles_str.split("</article>")
-    
-    global corpus_with_names
+    articles.pop()
+    stemmer = SnowballStemmer("english")
+
+
+    global corpus_with_names, stemmed_articles, both_versions
     corpus_with_names = {}
+    stemmed_articles = {}
+    both_versions = {}
     for article in articles:
         lines = article.split('\n')
+        tokens = nltk.word_tokenize(article)
+        stemmed_data_2 = ' '.join(stemmer.stem(t) for t in tokens)
         if article == articles[0]:
             corpus_with_names[lines[0]] = ''.join(lines[1:])
+            stemmed_articles[lines[0]] = stemmed_data_2
+            both_versions[lines[0]] = corpus_with_names[lines[0]] + stemmed_data_2
         else:
             corpus_with_names[lines[1]] = ''.join(lines[2:])
+            stemmed_articles[lines[1]] = stemmed_data_2
+            both_versions[lines[1]] = corpus_with_names[lines[1]] + stemmed_data_2
 
-    articles.pop()
 
     global articlenames, gv, gv_stemmed, g_matrix, g_matrix_stemmed
     articlenames = list(corpus_with_names.keys())
     articledata = list(corpus_with_names[name] for name in articlenames)
 
 
-    global stemmer
-    stemmer = SnowballStemmer("english")
-    
     global stemmed_data
-    documents = stem_documents()
-    article_names = list(documents.keys())
-    stemmed_data = list(documents[name] for name in article_names)
+    #documents = stemmed_articles
+    article_names = list(stemmed_articles.keys())
+    stemmed_data = list(stemmed_articles[name] for name in article_names)
 
-    global both_versions
-    both_versions = {}  # dictionary with both normal and stemmed articles
-
-    for article in corpus_with_names:
-         tokens_2 = corpus_with_names[article].split()
-         stemmed_data_2 = ' '.join(stemmer.stem(t) for t in tokens_2)
-         both_versions[article] = corpus_with_names[article] + stemmed_data_2
+    #global both_versions
+    #both_versions = {}  # dictionary with both normal and stemmed articles
+    #for article in corpus_with_names:
+    #    tokens_2 = nltk.word_tokenize(corpus_with_names[article])
+    #   stemmed_data_2 = ' '.join(stemmer.stem(t) for t in tokens_2)
+    #  both_versions[article] = corpus_with_names[article] + stemmed_data_2
 
     global both_names
     both_names = list(both_versions.keys())
@@ -76,14 +80,11 @@ def main():
  
     global t2i
     t2i = cv.vocabulary_
-
-
 #    query_stemmed = input("Search stemmed documents? y/n: ")  # Asks whether user would like to search stemmed results
 #    if query_stemmed == "y":
 #        stemmed = True
 #    else:
 #        stemmed = False
-
 app = Flask(__name__)
 
 @app.route('/search')
@@ -114,7 +115,7 @@ def search():
         stemmed = True
         boolean = 0
         inp = request.args.get('query')
-       # inp = input("Search for a document: ")  # asks user for input
+        #inp = input("Search for a document: ")  # asks user for input
         if inp:
      #   break
             both = ""
@@ -125,19 +126,27 @@ def search():
                 else:
                     both += stemmer.stem(each) + " "
 
+                if each in d.keys(): # checks for any boolean operators
+                    boolean += 1
+
                 inp = both.strip()       
                 inp = re.sub('"', '', inp) # Removes quotation marks
+
+                words_known = check_for_unknown_words(each.strip('"').lower(), stemmed)     # Check if the token is in corpus,
+                if words_known == False:                                                    # if it's not, stop loop & store the value as FALSE
+                    matches.append('Word "{}" is not found in corpus'.format(each))
+                    break
 
             if stemmed == True: # Stem the query
                 stemmed_inp = " ".join(stemmer.stem(each) for each in inp.split()) # stems every word if query is a multi-word phrase
                 inp = stemmed_inp
 
-            for t in inp.split(): # checks for any boolean operators
-                if t in d.keys():
-                    boolean += 1
-                    break
+            #for t in inp.split(): # checks for any boolean operators
+            #   if t in d.keys():
+            #      boolean += 1
+            #     break
 
-        if boolean != 0 and check_for_unknown_words(inp, stemmed):
+        if boolean != 0 and words_known:
             search_wikicorpus(inp, stemmed)
 
         if boolean == 0:
@@ -149,30 +158,30 @@ def search():
                 gv.ngram_range = (len(term), len(term))
                 g_matrix = gv.fit_transform(both_data).T.tocsr()
 
-            if check_for_unknown_words(inp, stemmed) == True:
+            if words_known:
                 search_wikicorpus(inp, stemmed)
 
         og_inp = request.args.get('query')  # retrieve_articles() doesnt work with stems (yet)
         try:
             retrieve_articles(og_inp)  # Prints the first few lines if there are exact matches in the articles
-        except KeyError:
+        except SyntaxError:
             pass
 
         return render_template('index.html', matches=matches)
 
 
-def check_for_unknown_words(query, stemmed):
-    tokens = query.split()
+def check_for_unknown_words(t, stemmed):
+    #tokens = query.split()
     if stemmed: # If stemmed is true, searches the stemmed terms. Otherwise continue to the unstemmed documents.
-        for t in tokens:
-            if t not in stemmed_terms and t not in d.keys():
-                matches.append('Word "{}" is not found in corpus'.format(t))
-                return False
+        #for t in tokens:
+        if stemmer.stem(t) not in stemmed_terms and t not in d.keys():
+            #matches.append('Word "{}" is not found in corpus'.format(t))
+            return False
     else:
-        for t in tokens:
-            if t not in terms and t not in d.keys():
-                matches.append('Word "{}" is not found in corpus'.format(t))
-                return False
+        #for t in tokens:
+        if t not in terms and t not in d.keys():
+            #matches.append('Word "{}" is not found in corpus'.format(t))
+            return False
     return True
 
 
@@ -242,19 +251,20 @@ def search_wikicorpus(query_string, stemmed):
         plt.bar(plot_articles, plot_scores)
     plt.title("Articles and their scores")
     plt.savefig("templates/test.png")
-
    
-def stem_documents():
+#def stem_documents():
 
  
-    stemmed_articles = {}
+ #   stemmed_articles = {}
 
-    for article in corpus_with_names:
-         tokens = corpus_with_names[article].split()
-         stemmed_data = ' '.join(stemmer.stem(t) for t in tokens)
-         stemmed_articles[article] = stemmed_data
+  #  for article in corpus_with_names:
+   #      tokens = corpus_with_names[article].split()
+    #     stemmed_data = ' '.join(stemmer.stem(t) for t in tokens)
+     #    stemmed_articles[article] = stemmed_data
 
-    return stemmed_articles
+    #return stemmed_articles
     
 
 app.run('127.0.0.1', debug=True)
+
+#search()
