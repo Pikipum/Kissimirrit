@@ -3,9 +3,14 @@ from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
+from nltk import word_tokenize
 from nltk.stem.snowball import SnowballStemmer
 from flask import Flask, render_template, request
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+import io
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from flask import Response
 
 def main():
   
@@ -26,23 +31,17 @@ def main():
 
 
     global corpus_with_names, stemmed_articles, both_versions
-    corpus_with_names = {}
-    stemmed_articles = {}
     both_versions = {}
     for article in articles:
         lines = article.split('\n')
         tokens = nltk.word_tokenize(article)
-        stemmed_data_2 = ' '.join(stemmer.stem(t) for t in tokens)
+        stemmed_data = ' '.join(stemmer.stem(t) for t in tokens)
         if article == articles[0]:
-            corpus_with_names[lines[0]] = ''.join(lines[1:])
-            stemmed_articles[lines[0]] = stemmed_data_2
-            both_versions[lines[0]] = corpus_with_names[lines[0]] + stemmed_data_2
+            both_versions[lines[0]] = ''.join(lines[1:]) + stemmed_data
         else:
-            corpus_with_names[lines[1]] = ''.join(lines[2:])
-            stemmed_articles[lines[1]] = stemmed_data_2
-            both_versions[lines[1]] = corpus_with_names[lines[1]] + stemmed_data_2
+            both_versions[lines[1]] = ''.join(lines[2:]) + stemmed_data
 
-
+    """
     global articlenames, gv, gv_stemmed, g_matrix, g_matrix_stemmed
     articlenames = list(corpus_with_names.keys())
     articledata = list(corpus_with_names[name] for name in articlenames)
@@ -52,7 +51,7 @@ def main():
     #documents = stemmed_articles
     article_names = list(stemmed_articles.keys())
     stemmed_data = list(stemmed_articles[name] for name in article_names)
-
+    """
     #global both_versions
     #both_versions = {}  # dictionary with both normal and stemmed articles
     #for article in corpus_with_names:
@@ -98,14 +97,14 @@ def search():
         gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
         g_matrix = gv.fit_transform(both_data).T.tocsr()
   
-        gv_stemmed = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
-        g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
+       # gv_stemmed = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
+       # g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
 
         gv._validate_vocabulary()
-        gv_stemmed._validate_vocabulary() # Validate stemmed vocabulary
+        #gv_stemmed._validate_vocabulary() # Validate stemmed vocabulary
 
         terms = gv.get_feature_names()
-        stemmed_terms = gv_stemmed.get_feature_names() # Get the stemmed feature names
+        #stemmed_terms = gv_stemmed.get_feature_names() # Get the stemmed feature names
         sparse_td_matrix = sparse_matrix.T.tocsr()
         
 
@@ -146,31 +145,31 @@ def search():
             #      boolean += 1
             #     break
 
-        if boolean != 0 and words_known:
-            search_wikicorpus(inp, stemmed)
+            if boolean != 0 and words_known:
+                search_wikicorpus(inp, stemmed)
 
-        if boolean == 0:
-            term = inp.split()
-            if stemmed:
-                gv_stemmed.ngram_range = (len(term), len(term))
-                g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
-            else:
+            if boolean == 0:
+                term = inp.split()
+                #if stemmed:
+                #gv_stemmed.ngram_range = (len(term), len(term))
+                #g_matrix_stemmed = gv_stemmed.fit_transform(stemmed_data).T.tocsr()
+            #else:
                 gv.ngram_range = (len(term), len(term))
                 g_matrix = gv.fit_transform(both_data).T.tocsr()
 
             if words_known:
                 search_wikicorpus(inp, stemmed)
-
+        
         og_inp = request.args.get('query')  # retrieve_articles() doesnt work with stems (yet)
         try:
             retrieve_articles(og_inp)  # Prints the first few lines if there are exact matches in the articles
         except SyntaxError:
-            pass
-
+            pass   
+        
         return render_template('index.html', matches=matches)
 
-
 def check_for_unknown_words(t, stemmed):
+    """
     #tokens = query.split()
     if stemmed: # If stemmed is true, searches the stemmed terms. Otherwise continue to the unstemmed documents.
         #for t in tokens:
@@ -178,10 +177,11 @@ def check_for_unknown_words(t, stemmed):
             #matches.append('Word "{}" is not found in corpus'.format(t))
             return False
     else:
+    """
         #for t in tokens:
-        if t not in terms and t not in d.keys():
+    if t not in terms and t not in d.keys():
             #matches.append('Word "{}" is not found in corpus'.format(t))
-            return False
+        return False
     return True
 
 
@@ -210,7 +210,7 @@ def retrieve_articles(inp):
 
 def search_wikicorpus(query_string, stemmed):
 
-
+    """
     if stemmed == True: #
         query_vec = gv_stemmed.transform([query_string]).tocsc() # Vectorize query string
         hits_stemmed = np.dot(query_vec, g_matrix_stemmed) # Cosine similarity
@@ -219,21 +219,23 @@ def search_wikicorpus(query_string, stemmed):
                    reverse=True)
 
     else:
-        query_vec = gv.transform([query_string]).tocsc() # Vectorize query string
-        hits = np.dot(query_vec, g_matrix) # Cosine similarity
-        ranked_scores_and_doc_ids = \
-            sorted(zip(np.array(hits[hits.nonzero()])[0], hits.nonzero()[1]),
-                   reverse=True)
+    """
+    global ranked_scores_and_doc_ids
+    query_vec = gv.transform([query_string]).tocsc() # Vectorize query string
+    hits = np.dot(query_vec, g_matrix) # Cosine similarity
+    ranked_scores_and_doc_ids = \
+        sorted(zip(np.array(hits[hits.nonzero()])[0], hits.nonzero()[1]), reverse=True)
 
 
     # Output result
     #print("Your query '{:s}' matches the following documents:".format(query_string))
     for i, (score, doc_idx) in enumerate(ranked_scores_and_doc_ids):
-        matches.append("Doc #{:d} (score: {:.4f}): {:s}".format(i, score, articlenames[doc_idx]))
-       # print("Doc #{:d} (score: {:.4f}): {:s}".format(i, score, articlenames[doc_idx]))
+        matches.append("Doc #{:d} (score: {:.4f}): {:s}".format(i, score, both_names[doc_idx]))
+       # print("Doc #{:d} (score: {:.4f}): {:s}".format(i, score, both_names[doc_idx]))
    # print()
 
-
+@app.route('/test.png')
+def plot_image():
     #Creates a plot and saves it in test.png.
     #Still need to show it in the HTML page.
     plot_articles = []
@@ -243,28 +245,18 @@ def search_wikicorpus(query_string, stemmed):
         plot_scores.append(score)
 
 
-    plt.figure()
+    fig, ax = plt.subplots()
     #  ax = fig.add_axes([0,0,1,1])
     if len(plot_articles) > 5:
-        plt.bar(plot_articles[0:5], plot_scores[0:5])
+        ax.bar(plot_articles[0:5], plot_scores[0:5])
     else:
-        plt.bar(plot_articles, plot_scores)
-    plt.title("Articles and their scores")
-    plt.savefig("templates/test.png")
-   
-#def stem_documents():
+        ax.bar(plot_articles, plot_scores)
+    fig.suptitle("Articles and their scores")
+    png_image = io.BytesIO()
+    FigureCanvas(fig).print_png(png_image)
 
- 
- #   stemmed_articles = {}
+    return Response(png_image.getvalue(), mimetype='image/png')
 
-  #  for article in corpus_with_names:
-   #      tokens = corpus_with_names[article].split()
-    #     stemmed_data = ' '.join(stemmer.stem(t) for t in tokens)
-     #    stemmed_articles[article] = stemmed_data
 
-    #return stemmed_articles
-    
+#app.run('127.0.0.1', debug=True)
 
-app.run('127.0.0.1', debug=True)
-
-#search()
