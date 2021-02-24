@@ -11,6 +11,8 @@ from matplotlib.figure import Figure
 import io
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from flask import Response
+import matplotlib
+import pke
 
 def main():
   
@@ -79,12 +81,17 @@ def main():
  
     global t2i
     t2i = cv.vocabulary_
+ 
+ 
+
 #    query_stemmed = input("Search stemmed documents? y/n: ")  # Asks whether user would like to search stemmed results
 #    if query_stemmed == "y":
 #        stemmed = True
 #    else:
 #        stemmed = False
 app = Flask(__name__)
+
+matplotlib.use('Agg')
 
 @app.route('/search')
 
@@ -159,13 +166,13 @@ def search():
 
             if words_known:
                 search_wikicorpus(inp, stemmed)
-        
+
         og_inp = request.args.get('query')  # retrieve_articles() doesnt work with stems (yet)
         try:
             retrieve_articles(og_inp)  # Prints the first few lines if there are exact matches in the articles
         except SyntaxError:
             pass   
-        
+
         return render_template('index.html', matches=matches)
 
 def check_for_unknown_words(t, stemmed):
@@ -248,9 +255,9 @@ def plot_image():
     fig, ax = plt.subplots()
     #  ax = fig.add_axes([0,0,1,1])
     if len(plot_articles) > 5:
-        ax.bar(plot_articles[0:5], plot_scores[0:5])
+        ax.bar(plot_articles[0:5], plot_scores[0:5], color='purple')
     else:
-        ax.bar(plot_articles, plot_scores)
+        ax.bar(plot_articles, plot_scores, color='purple')
     fig.suptitle("Articles and their scores")
     png_image = io.BytesIO()
     FigureCanvas(fig).print_png(png_image)

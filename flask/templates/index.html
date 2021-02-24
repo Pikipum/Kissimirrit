@@ -2,6 +2,13 @@
     <head>
         <meta charset="utf-8">
         <title>Flask example</title>
+      <style>
+          .results {
+             display: flex;
+             align-items: center;
+             justify-content: space-evenly;
+          }
+      </style>
     </head>
     <body>
         <h1>Find documents</h1>
@@ -10,6 +17,7 @@
             <input type="text" name="query" autofocus>
             <input type="submit" value="Search">
         </form>
+        <div class=results>
         <table>
             <!--Go through each item in the "matches" variable sent from
                 search() function in the Flask app-->
@@ -24,7 +32,10 @@
             {% endfor %}
 
         </table>
+      {% if matches %}
     <img src="/test.png" alt="Plot with scores and names">
+      {% endif %}
+      </div>
     </body>
 </html>
 
