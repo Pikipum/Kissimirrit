@@ -1,28 +1,56 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>Flask example</title>
+        <title>Kissimirrit Search Engine</title>
       <style>
           .results {
              display: flex;
              align-items: center;
              justify-content: space-evenly;
           }
+          h1 {
+             text-align: center;
+             font-family: geneva;
+             font-size: 40px;
+             padding: 15px;
+          }
+          input[type=text], select {
+             width: 70%;
+             padding: 12px 20px;
+             margin: 8px 0;
+             display: inline-block;
+             border-radius: 4px;
+             box-sizing: border-box;
+          }
+          input[type=submit] {
+             width: 25%;
+             background-color: thistle;
+             color: black;
+             padding: 14px 20px;
+             margin: 8px 0;
+             border: none;
+             border-radius: 4px;
+             cursor: pointer;
+          }
+          input[type=submit]:hover {
+             background-color: plum;
       </style>
     </head>
     <body>
-        <h1>Find documents</h1>
+        <h1><i>Find Wikipedia Articles</i></h1>
         <!--Reload the page with variable "query" in the URL-->
-        <form>
-            <input type="text" name="query" autofocus>
-            <input type="submit" value="Search">
-        </form>
         <div class=results>
         <table>
             <!--Go through each item in the "matches" variable sent from
                 search() function in the Flask app-->
-            {% for item in matches %}
             <tr>
+               <td>
+                <form>
+                   <input type="text" name="query" placeholder="Type your query here..." autofocus>
+                   <input type="submit" value="Search">
+                </form></td> </tr>
+             <tr>
+                {% for item in matches %}
                 <!--Display the name of the item based on the "name" key-->
                 <td>{{ item }}</td>
                 <!--Display the image of the item based on the "source" key-->
