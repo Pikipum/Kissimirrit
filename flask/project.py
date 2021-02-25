@@ -12,11 +12,26 @@ import io
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from flask import Response
 import matplotlib
+import csv
+
 
 def main():
 
     #read & process the corpus here
- 
+    tweets = []
+    tweetcorp = open("corpus/tweetcorpus.tsv", encoding="utf-8")
+    read_tsv = csv.reader(tweetcorp, delimiter="\t")
+
+    for row in read_tsv:
+        tweets.append(row)
+
+    tweetcorp.close()
+
+    #Structure of tweets: print(tweets[0])
+    #Tweet structure: Tweet ID [0], Country [1], Date [2], Tweet [3], and other parameters
+    #[3] is the actual content of the tweet. To print out the 15th tweet of the corpus:
+    #Use for example print(tweets[15][3])
+
     global stemmer
     stemmer = SnowballStemmer("english")
 
@@ -55,14 +70,13 @@ def search():
             inp = re.sub('"', '', inp) # Removes quotation marks
 
             words_known = check_for_unknown_words(each.strip('"').lower(), stemmed)     # Check if the token is in corpus,
-                if words_known == False:                                                    # if it's not, stop loop & store the value as FALSE
-                    matches.append('Word "{}" is not found in corpus'.format(each))
-                    break
+            if words_known == False:                                                    # if it's not, stop loop & store the value as FALSE
+                matches.append('Word "{}" is not found in corpus'.format(each))
+                break
 
         if stemmed == True: # Stem the query
             stemmed_inp = " ".join(stemmer.stem(each) for each in inp.split()) # stems every word if query is a multi-word phrase
             inp = stemmed_inp
-
 
         if words_known:
             gv.ngram_range = (len(term), len(term))
@@ -70,6 +84,7 @@ def search():
             search_wikicorpus(inp)
 
     return render_template('index.html', matches=matches)
+
 
 def check_for_unknown_words(t):
 
@@ -115,5 +130,5 @@ def plot_image():
 
     return Response(png_image.getvalue(), mimetype='image/png')
 
-
+main()
 #app.run('127.0.0.1', debug=True)
