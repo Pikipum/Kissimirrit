@@ -13,19 +13,27 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from flask import Response
 import matplotlib
 import csv
+import langid
 
 
 def main():
 
     #read & process the corpus here
+    global tweets
     tweets = []
+    global languages
+    languages = []
     tweetcorp = open("corpus/tweetcorpus.tsv", encoding="utf-8")
     read_tsv = csv.reader(tweetcorp, delimiter="\t")
 
     for row in read_tsv:
         tweets.append(row)
+        if langid.classify(row[3])[0] not in languages:
+            language = langid.classify(row[3])
+            languages.append(language[0])
 
     tweetcorp.close()
+
 
     #Structure of tweets: print(tweets[0])
     #Tweet structure: Tweet ID [0], Country [1], Date [2], Tweet [3], and other parameters
@@ -38,17 +46,18 @@ def main():
 
 app = Flask(__name__)
 
+main()
+
 matplotlib.use('Agg')
 
 @app.route('/search')
 
 def search():
 
-    main()
 
     global gv, g_matrix, terms
     gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
-    g_matrix = gv.fit_transform(both_data).T.tocsr()
+    g_matrix = gv.fit_transform(tweets[3]).T.tocsr()
     gv._validate_vocabulary()
     terms = gv.get_feature_names()
 
@@ -80,10 +89,10 @@ def search():
 
         if words_known:
             gv.ngram_range = (len(term), len(term))
-            g_matrix = gv.fit_transform(both_data).T.tocsr()
+            g_matrix = gv.fit_transform(tweets[3]).T.tocsr()
             search_wikicorpus(inp)
 
-    return render_template('index.html', matches=matches)
+    return render_template('index.html', matches=matches, languages=languages)
 
 
 def check_for_unknown_words(t):
@@ -91,8 +100,7 @@ def check_for_unknown_words(t):
     if t not in terms:
         return False
     return True
-
-
+"""
 def search_wikicorpus(query_string):
 
     global ranked_scores_and_doc_ids
@@ -101,10 +109,9 @@ def search_wikicorpus(query_string):
     ranked_scores_and_doc_ids = \
         sorted(zip(np.array(hits[hits.nonzero()])[0], hits.nonzero()[1]), reverse=True)
 
-
     # Output result
     for i, (score, doc_idx) in enumerate(ranked_scores_and_doc_ids):
-        matches.append("Doc #{:d} (score: {:.4f}): {:s}\n".format(i, score, both_names[doc_idx]))
+        matches.append("Doc #{:d} (score: {:.4f}): {:s}\n".format(i, score, [doc_idx]))
 
 
 @app.route('/test.png')
@@ -130,5 +137,6 @@ def plot_image():
 
     return Response(png_image.getvalue(), mimetype='image/png')
 
-main()
 #app.run('127.0.0.1', debug=True)
+
+"""

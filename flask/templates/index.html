@@ -34,27 +34,59 @@
           }
           input[type=submit]:hover {
              background-color: plum;
+          }
+          .dropbtn {
+             background-color: thistle;
+             color: black;
+             padding: 14px 20px;
+             border: none;
+             border-radius: 4px;
+             cursor: pointer;
+          }
+         .dropdown {
+            display: inline-block;
+          }
+          .dropdown-content {
+             display: none;
+             box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+          }
+          .dropdown-content a:hover {background-color: #f1f1f1;}
+          .dropdown:hover .dropdown-content {display: block;}
+          .dropbtn:hover {background-color: plum;}
+          .query {
+             width: 50%;
+             margin: 0 auto;
+             padding: 20px;
+          }
       </style>
     </head>
     <body>
-        <h1><i>Find Wikipedia Articles</i></h1>
+        <h1><i>Search Tweets</i></h1>
         <!--Reload the page with variable "query" in the URL-->
-        <div class=results>
+         <div class="query">
+        <form>
+         <input type="text" name="query" placeholder="Type your query here..." autofocus>
+         <input type="submit" value="Search">
+       </form>
+        <div class="dropdown">
+                  <button class="dropbtn">Languages</button>
+                   <div class="dropdown-content">
+                     {% for lang in languages %}
+                        <p> {{ lang }} </p>
+                     {% endfor %}
+                   </div>
+                  </div>
+         </div>
+        <div class="results">
         <table>
             <!--Go through each item in the "matches" variable sent from
                 search() function in the Flask app-->
-            <tr>
-               <td>
-                <form>
-                   <input type="text" name="query" placeholder="Type your query here..." autofocus>
-                   <input type="submit" value="Search">
-                </form></td> </tr>
              <tr>
                 {% for item in matches %}
                 <!--Display the name of the item based on the "name" key-->
                 <td>{{ item }}</td>
                 <!--Display the image of the item based on the "source" key-->
-                <td></td>
+      
             </tr>
             <!--End for loop-->
             {% endfor %}
