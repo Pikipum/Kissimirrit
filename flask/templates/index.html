@@ -69,11 +69,15 @@
          <input type="submit" value="Search">
        </form>
         <div class="dropdown">
+               <form action="/select_language">
                   <button class="dropbtn">Languages</button>
                    <div class="dropdown-content">
+                     <select id="language" name="selected_lang">
                      {% for lang in languages %}
-                        <p> {{ lang }} </p>
+                        <option value="{{ lang }}">{{lang}}</option>
                      {% endfor %}
+                     </select>
+                  </form>
                    </div>
                   </div>
          </div>
@@ -86,7 +90,7 @@
                 <!--Display the name of the item based on the "name" key-->
                 <td>{{ item }}</td>
                 <!--Display the image of the item based on the "source" key-->
-      
+                 
             </tr>
             <!--End for loop-->
             {% endfor %}

@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
 from nltk import word_tokenize
 from nltk.stem.snowball import SnowballStemmer
-from flask import Flask, render_template, request
+from flask import Flask, render_template, render_template_string, request
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import io
@@ -14,6 +14,7 @@ from flask import Response
 import matplotlib
 import csv
 import langid
+
 
 
 def main():
@@ -33,8 +34,13 @@ def main():
             languages.append(language[0])
 
     tweetcorp.close()
+ 
+    global lang_id_dict         # a dictionary with language codes as keys and tweet IDs as values
+    lang_id_dict = {}
+    for tweet in tweets:
+        lang_id_dict[langid.classify(tweet[3])[0]] = tweet[0]
 
-
+ 
     #Structure of tweets: print(tweets[0])
     #Tweet structure: Tweet ID [0], Country [1], Date [2], Tweet [3], and other parameters
     #[3] is the actual content of the tweet. To print out the 15th tweet of the corpus:
@@ -50,6 +56,13 @@ main()
 
 matplotlib.use('Agg')
 
+@app.route('/select_language', methods=['POST', 'GET'])
+def selected_language():
+   global selected_language
+   selected_language = request.form.get("language")
+
+   return render_template_string('''<p>{{ selected_language }}</p>''', selected_language=selected_language)
+
 @app.route('/search')
 
 def search():
@@ -57,7 +70,7 @@ def search():
 
     global gv, g_matrix, terms
     gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
-    g_matrix = gv.fit_transform(tweets[3]).T.tocsr()
+    g_matrix = gv.fit_transform().T.tocsr()
     gv._validate_vocabulary()
     terms = gv.get_feature_names()
 
@@ -78,7 +91,7 @@ def search():
             inp = both.strip()
             inp = re.sub('"', '', inp) # Removes quotation marks
 
-            words_known = check_for_unknown_words(each.strip('"').lower(), stemmed)     # Check if the token is in corpus,
+            words_known = check_for_unknown_words(each.strip('"').lower())     # Check if the token is in corpus,
             if words_known == False:                                                    # if it's not, stop loop & store the value as FALSE
                 matches.append('Word "{}" is not found in corpus'.format(each))
                 break
@@ -88,8 +101,9 @@ def search():
             inp = stemmed_inp
 
         if words_known:
+            term = inp.split()
             gv.ngram_range = (len(term), len(term))
-            g_matrix = gv.fit_transform(tweets[3]).T.tocsr()
+            g_matrix = gv.fit_transform().T.tocsr()
             search_wikicorpus(inp)
 
     return render_template('index.html', matches=matches, languages=languages)
@@ -100,7 +114,7 @@ def check_for_unknown_words(t):
     if t not in terms:
         return False
     return True
-"""
+
 def search_wikicorpus(query_string):
 
     global ranked_scores_and_doc_ids
@@ -139,4 +153,4 @@ def plot_image():
 
 #app.run('127.0.0.1', debug=True)
 
-"""
+
