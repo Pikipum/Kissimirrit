@@ -14,6 +14,7 @@ from flask import Response
 import matplotlib
 import csv
 import langid
+import pke
 
 
 
@@ -40,6 +41,13 @@ def main():
     for tweet in tweets:
         lang_id_dict[langid.classify(tweet[3])[0]] = tweet[0]
 
+    global tweets_data, tweets_id
+    tweets_data = []
+    tweets_id = []
+    for each in tweets:
+        tweets_data.append(each[3])
+        tweets_id.append(each[0])
+
  
     #Structure of tweets: print(tweets[0])
     #Tweet structure: Tweet ID [0], Country [1], Date [2], Tweet [3], and other parameters
@@ -48,8 +56,8 @@ def main():
 
     global stemmer
     stemmer = SnowballStemmer("english")
-
-
+ 
+    
 app = Flask(__name__)
 
 main()
@@ -70,7 +78,7 @@ def search():
 
     global gv, g_matrix, terms
     gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
-    g_matrix = gv.fit_transform().T.tocsr()
+    g_matrix = gv.fit_transform(tweets_data).T.tocsr()
     gv._validate_vocabulary()
     terms = gv.get_feature_names()
 
@@ -103,7 +111,7 @@ def search():
         if words_known:
             term = inp.split()
             gv.ngram_range = (len(term), len(term))
-            g_matrix = gv.fit_transform().T.tocsr()
+            g_matrix = gv.fit_transform(tweets_data).T.tocsr()
             search_wikicorpus(inp)
 
     return render_template('index.html', matches=matches, languages=languages)
@@ -124,9 +132,22 @@ def search_wikicorpus(query_string):
         sorted(zip(np.array(hits[hits.nonzero()])[0], hits.nonzero()[1]), reverse=True)
 
     # Output result
+    tweet_results = open('results.txt', 'w')
     for i, (score, doc_idx) in enumerate(ranked_scores_and_doc_ids):
-        matches.append("Doc #{:d} (score: {:.4f}): {:s}\n".format(i, score, [doc_idx]))
+        tweet_results.write(tweets_data[doc_idx])
+        matches.append("Doc #{:d} (score: {:.4f}): {:s}\n".format(i, score, tweets_id[doc_idx]))
+    tweet_results.close()
 
+    keyphrases_and_scores = {} # dictionary with the keyphrases/themes as keys and their scores as values
+
+    extractor = pke.unsupervised.TopicRank()
+    extractor.load_document(input='results.txt')
+    extractor.candidate_selection()
+    extractor.candidate_weighting()
+    keyphrases = extractor.get_n_best(n=10)
+    for keyphrase in keyphrases:
+        keyphrases_and_scores[keyphrase[0]] = f'{keyphrase[1]:.5f}'
+ 
 
 @app.route('/test.png')
 def plot_image():
