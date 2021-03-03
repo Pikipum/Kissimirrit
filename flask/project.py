@@ -143,10 +143,11 @@ def search_wikicorpus(query_string):
     extractor.load_document(input='results.txt')
     extractor.candidate_selection()
     extractor.candidate_weighting()
+    global keyphrases
     keyphrases = extractor.get_n_best(n=10)
     for keyphrase in keyphrases:
         keyphrases_and_scores[keyphrase[0]] = f'{keyphrase[1]:.5f}'
- 
+
 
 @app.route('/test.png')
 def plot_image():
@@ -170,6 +171,27 @@ def plot_image():
     FigureCanvas(fig).print_png(png_image)
 
     return Response(png_image.getvalue(), mimetype='image/png')
+
+@app.route('/test2.png')
+def plot_keyphrase_image():
+
+    plot_words = []
+    plot_keyphrase_scores = []
+    for word, score in keyphrases:
+        plot_words.append(word)
+        plot_keyphrase_scores.append(score)
+
+    fig, ax = plt.subplots()
+    if len(plot_words) > 5:
+        ax.bar(plot_words[0:5], plot_keyphrase_scores[0:5], color='purple')
+    else:
+        ax.bar(plot_words, plot_keyphrase_scores, color='purple')
+    fig.suptitle("Keywords and their scores")
+    png_image = io.BytesIO()
+    FigureCanvas(fig).print_png(png_image)
+
+    return Response(png_image.getvalue(), mimetype='image/png')
+
 
 app.run('127.0.0.1', debug=True)
 
