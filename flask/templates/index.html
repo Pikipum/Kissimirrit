@@ -69,8 +69,8 @@
          <input type="submit" value="Search">
        </form>
         <div class="dropdown">
-               <form action="/select_language">
-                  <button class="dropbtn">Languages</button>
+               <form method="POST"  action="/select_language">
+                  <button class="dropbtn" type="submit">Languages</button>
                    <div class="dropdown-content">
                      <select id="language" name="selected_lang">
                      {% for lang in languages %}

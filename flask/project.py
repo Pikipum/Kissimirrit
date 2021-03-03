@@ -60,21 +60,14 @@ def main():
     
 app = Flask(__name__)
 
-#main()
+main()
 
 matplotlib.use('Agg')
-
-@app.route('/select_language', methods=['POST', 'GET'])
-def selected_language():
-   global selected_language
-   selected_language = request.form.get("language")
-
-   return render_template_string('''<p>{{ selected_language }}</p>''', selected_language=selected_language)
 
 @app.route('/search')
 
 def search():
-    main()
+
 
     global gv, g_matrix, terms
     gv = TfidfVectorizer(lowercase=True, sublinear_tf=True, use_idf=True, norm="l2")
@@ -116,6 +109,13 @@ def search():
 
     return render_template('index.html', matches=matches, languages=languages)
 
+@app.route('/select_language', methods=['POST', 'GET'])
+def selected_language():
+   global selected_language
+   selected_language = str(request.form.get("selected_lang"))
+
+   #return render_template_string('''<p>{{ selected_language }}</p>''', selected_language=selected_language)
+   return(str(selected_language))
 
 def check_for_unknown_words(t):
 
@@ -132,10 +132,11 @@ def search_wikicorpus(query_string):
         sorted(zip(np.array(hits[hits.nonzero()])[0], hits.nonzero()[1]), reverse=True)
 
     # Output result
-    with io.open ('results.txt', 'w', encoding = 'UTF-8') as tweet_results:
-        for i, (score, doc_idx) in enumerate(ranked_scores_and_doc_ids):
-            tweet_results.write(tweets_data[doc_idx])
-            matches.append("Doc #{:d} (score: {:.4f}): {:s}\n".format(i, score, tweets_id[doc_idx]))
+    tweet_results = open('results.txt', 'w')
+    for i, (score, doc_idx) in enumerate(ranked_scores_and_doc_ids):
+        tweet_results.write(tweets_data[doc_idx])
+        matches.append("Doc #{:d} (score: {:.4f}): {:s}\n".format(i, score, tweets_id[doc_idx]))
+    tweet_results.close()
 
     keyphrases_and_scores = {} # dictionary with the keyphrases/themes as keys and their scores as values
 
@@ -143,56 +144,34 @@ def search_wikicorpus(query_string):
     extractor.load_document(input='results.txt')
     extractor.candidate_selection()
     extractor.candidate_weighting()
-    global keyphrases
     keyphrases = extractor.get_n_best(n=10)
     for keyphrase in keyphrases:
         keyphrases_and_scores[keyphrase[0]] = f'{keyphrase[1]:.5f}'
-
+ 
 
 @app.route('/test.png')
 def plot_image():
     #Creates a plot and saves it in test.png.
     #Still need to show it in the HTML page.
-    plot_tweets = []
+    plot_articles = []
     plot_scores = []
-    for score, tweet_id in ranked_scores_and_doc_ids:
-        plot_tweets.append(tweets_id[tweet_id])
+    for score, name in ranked_scores_and_doc_ids:
+        plot_articles.append(both_names[name])
         plot_scores.append(score)
 
 
     fig, ax = plt.subplots()
     #  ax = fig.add_axes([0,0,1,1])
-    if len(plot_tweets) > 5:
-        ax.bar(plot_tweets[0:5], plot_scores[0:5], color='purple')
+    if len(plot_articles) > 5:
+        ax.bar(plot_articles[0:5], plot_scores[0:5], color='purple')
     else:
-        ax.bar(plot_tweets, plot_scores, color='purple')
-    fig.suptitle("Tweets and their scores")
+        ax.bar(plot_articles, plot_scores, color='purple')
+    fig.suptitle("Articles and their scores")
     png_image = io.BytesIO()
     FigureCanvas(fig).print_png(png_image)
 
     return Response(png_image.getvalue(), mimetype='image/png')
 
-@app.route('/test2.png')
-def plot_keyphrase_image():
-
-    plot_words = []
-    plot_keyphrase_scores = []
-    for word, score in keyphrases:
-        plot_words.append(word)
-        plot_keyphrase_scores.append(score)
-
-    fig, ax = plt.subplots()
-    if len(plot_words) > 5:
-        ax.bar(plot_words[0:5], plot_keyphrase_scores[0:5], color='purple')
-    else:
-        ax.bar(plot_words, plot_keyphrase_scores, color='purple')
-    fig.suptitle("Keywords and their scores")
-    png_image = io.BytesIO()
-    FigureCanvas(fig).print_png(png_image)
-
-    return Response(png_image.getvalue(), mimetype='image/png')
-
-
-app.run('127.0.0.1', debug=True)
+#app.run('127.0.0.1', debug=True)
 
 
