@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
 from nltk import word_tokenize
 from nltk.stem.snowball import SnowballStemmer
-from flask import Flask, render_template, render_template_string, request
+from flask import Flask, render_template, render_template_string, request, url_for, redirect
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import io
@@ -23,18 +23,22 @@ def main():
     #read & process the corpus here
     global tweets
     tweets = []
-    global languages
+    global languages, countries
     languages = []
+    countries = []
     tweetcorp = open("corpus/tweetcorpus.tsv", encoding="utf-8")
     read_tsv = csv.reader(tweetcorp, delimiter="\t")
 
     for row in read_tsv:
         tweets.append(row)
+        if row[1] not in countries:
+            countries.append(row[1])
         if langid.classify(row[3])[0] not in languages:
             language = langid.classify(row[3])
             languages.append(language[0])
 
     tweetcorp.close()
+
  
     global lang_id_dict         # a dictionary with language codes as keys and tweet IDs as values
     lang_id_dict = {}
@@ -53,6 +57,7 @@ def main():
     #Tweet structure: Tweet ID [0], Country [1], Date [2], Tweet [3], and other parameters
     #[3] is the actual content of the tweet. To print out the 15th tweet of the corpus:
     #Use for example print(tweets[15][3])
+
 
     global stemmer
     stemmer = SnowballStemmer("english")
@@ -79,6 +84,8 @@ def search():
     matches = []
     stemmed = True
     inp = request.args.get('query')
+    language = selected_language
+    print(language)
     if inp:
         both = ""
         for each in inp.split():
@@ -107,7 +114,7 @@ def search():
             g_matrix = gv.fit_transform(tweets_data).T.tocsr()
             search_wikicorpus(inp)
 
-    return render_template('index.html', matches=matches, languages=languages)
+    return render_template('index.html', matches=matches, languages=languages, countries=countries)
 
 @app.route('/select_language', methods=['POST', 'GET'])
 def selected_language():
@@ -115,7 +122,7 @@ def selected_language():
    selected_language = str(request.form.get("selected_lang"))
 
    #return render_template_string('''<p>{{ selected_language }}</p>''', selected_language=selected_language)
-   return(str(selected_language))
+   return redirect(url_for('search'))
 
 def check_for_unknown_words(t):
 
@@ -196,5 +203,4 @@ def plot_keyphrase_image():
 
 
 #app.run('127.0.0.1', debug=True)
-
 
