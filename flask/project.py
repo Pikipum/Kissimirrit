@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
 from nltk import word_tokenize
 from nltk.stem.snowball import SnowballStemmer
-from flask import Flask, render_template, render_template_string, request, url_for, redirect
+from flask import Flask, render_template, request, url_for, redirect
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import io
@@ -19,6 +19,9 @@ import pke
 
 
 def main():
+
+    global stemmer
+    stemmer = SnowballStemmer("english")
 
     #read & process the corpus here
     global tweets
@@ -49,7 +52,9 @@ def main():
     tweets_data = []
     tweets_id = []
     for each in tweets:
-        tweets_data.append(each[3])
+        tokens = nltk.word_tokenize(each[3])
+        stemmed_tweet = ' '.join(stemmer.stem(t) for t in tokens)
+        tweets_data.append(each[3] + stemmed_tweet)
         tweets_id.append(each[0])
 
  
@@ -57,10 +62,6 @@ def main():
     #Tweet structure: Tweet ID [0], Country [1], Date [2], Tweet [3], and other parameters
     #[3] is the actual content of the tweet. To print out the 15th tweet of the corpus:
     #Use for example print(tweets[15][3])
-
-
-    global stemmer
-    stemmer = SnowballStemmer("english")
  
     
 app = Flask(__name__)
@@ -82,10 +83,10 @@ def search():
 
     global matches
     matches = []
+    words_known = False
+    error = ""
     stemmed = True
     inp = request.args.get('query')
-    language = selected_language
-    print(language)
     if inp:
         both = ""
         for each in inp.split():
@@ -101,12 +102,23 @@ def search():
 
             words_known = check_for_unknown_words(each.strip('"').lower())     # Check if the token is in corpus,
             if words_known == False:                                                    # if it's not, stop loop & store the value as FALSE
-                matches.append('Word "{}" is not found in corpus'.format(each))
+                error = 'Word "{}" is not found in corpus.'.format(each)
                 break
 
         if stemmed == True: # Stem the query
             stemmed_inp = " ".join(stemmer.stem(each) for each in inp.split()) # stems every word if query is a multi-word phrase
             inp = stemmed_inp
+
+        if len(inp.split()) > 1:
+           term = inp.split()
+           gv.ngram_range = (len(term), len(term))
+           g_matrix = gv.fit_transform(tweets_data).T.tocsr()
+           multiword_terms = gv.get_feature_names()
+           if inp not in multiword_terms:
+               error = f'Phrase "{inp}" is not found in corpus.'
+               words_known = False
+           else:
+               words_known = True
 
         if words_known:
             term = inp.split()
@@ -114,14 +126,13 @@ def search():
             g_matrix = gv.fit_transform(tweets_data).T.tocsr()
             search_wikicorpus(inp)
 
-    return render_template('index.html', matches=matches, languages=languages, countries=countries)
+    return render_template('index.html', matches=matches, languages=languages, countries=countries, words_known=words_known, error=error)
 
 @app.route('/select_language', methods=['POST', 'GET'])
 def selected_language():
    global selected_language
    selected_language = str(request.form.get("selected_lang"))
 
-   #return render_template_string('''<p>{{ selected_language }}</p>''', selected_language=selected_language)
    return redirect(url_for('search'))
 
 def check_for_unknown_words(t):

@@ -5,7 +5,7 @@
       <style>
           .results {
              display: flex;
-             align-items: center;
+             align-items: flex-start;
              justify-content: space-evenly;
           }
           h1 {
@@ -58,6 +58,14 @@
              margin: 0 auto;
              padding: 20px;
           }
+          .tweets {
+           width: 100%;
+          }
+          .error {
+          width: 100%;
+          margin: 0 auto;
+          text-align: center;
+          }
       </style>
     </head>
     <body>
@@ -81,11 +89,18 @@
                    </div>
                   </div>
          </div>
+           {% if error %}
+           <div class="error">
+           <p> {{ error }}</p>
+           </div>
+          {% endif %}
         <div class="results">
-        <table>
+          <div class="tweets">
+           <table>
             <!--Go through each item in the "matches" variable sent from
                 search() function in the Flask app-->
              <tr>
+                {% if matches %}
                 {% for item in matches %}
                 <!--Display the name of the item based on the "name" key-->
                 <td>{{ item }}</td>
@@ -94,11 +109,18 @@
             </tr>
             <!--End for loop-->
             {% endfor %}
-
-        </table>
-      {% if matches %}
-    <img src="/test.png" alt="Plot with scores and names">
+              {% endif %}
+          </table>
+         </div>
+      {% if words_known %}
+        <div class="plots">
+      <table>
+      <td>
+    <img src="/test.png"  alt="Plot with scores and names">
     <img src="/test2.png" alt="Theme plot with scores and names">
+     </td>
+      </table>
+      </div>
       {% endif %}
       </div>
     </body>
