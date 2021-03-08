@@ -36,26 +36,36 @@ def main():
             language = langid.classify(row[3])
             languages.append(language[0])
 
+    languages = sorted(languages[1:])          # Sort language options for webpage
+    languages.insert(0,'en')
     tweetcorp.close()
 
     global stemmer_dict
-    stemmer_dict =  {'en':'english', 'da':'danish', 'nl':'dutch', 'fi':'finnish', 'fr':'french',            # Translates langid language abbreviations to
+    stemmer_dict =  {'en':'english', 'da':'danish', 'nl':'dutch', 'fi':'finnish', 'fr':'french',            # Maps langid language abbreviations to
                      'de':'german', 'hu':'hungarian', 'it':'italian', 'no':'norwegian',                     # SnowballStemmer arguments
                      'pt':'portuguese','ro':'romanian', 'ru':'russian', 'es':'spanish', 'sv':'swedish'}
 
-    global lang_tweet_dict, lang_id_dict
-    lang_tweet_dict = {lang: [] for lang in languages}  # Create 2 dictionaries with empty list for each language
+    global lang_tweet_dict, lang_id_dict, id_date_dict, id_og_dict
+    lang_tweet_dict = {lang: [] for lang in languages}  # Create 2 dictionaries with empty list for each language to use as dataset
     lang_id_dict = {lang: [] for lang in languages}
+    id_date_dict = {}                                   # Map tweet ids to country & date of the tweet
+    id_og_dict ={}                                      # Preserve original (unstemmed/unjoined) tweets
     for each in tweets[1:]:
-        language = langid.classify(each[3])[0]
+        tweet = re.sub(r'http.*', r'', each[3])         # Clean the tweet
+        if each[4] == '1':
+            language = 'en'
+        else:
+            language = langid.classify(tweet)[0]
         if language in stemmer_dict.keys():             # Check if the language is supported by SnowballStemmer
             stemmer = SnowballStemmer(stemmer_dict[language])
-            tokens = nltk.word_tokenize(each[3])
+            tokens = nltk.word_tokenize(tweet)
             stemmed_tweet = ' '.join(stemmer.stem(t) for t in tokens)
-            lang_tweet_dict[language].append(each[3] + stemmed_tweet)
+            lang_tweet_dict[language].append(tweet + stemmed_tweet)
         else:
-            lang_tweet_dict[language].append(each[3])
+            lang_tweet_dict[language].append(tweet)
         lang_id_dict[language].append(each[0])
+        id_date_dict[each[0]] = each[1]+' '+each[2]
+        id_og_dict[each[0]] = tweet
         #tweets_data.append(each[3] + stemmed_tweet)
         #tweets_id.append(each[0])
     global selected_language                   # Set English as default language
@@ -124,7 +134,11 @@ def search():
 
             words_known = check_for_unknown_words(each.strip('"').lower())  # Check if the token is in corpus,
             if words_known == False:  # if it's not, stop loop & store the value as FALSE
-                error = 'Word "{}" is not found in corpus.'.format(each)
+                if selected_language in stemmer_dict.keys():    # Inform user which language was used as corpus
+                    language = stemmer_dict[selected_language][0].upper() + stemmer_dict[selected_language][1:]
+                else:
+                    language = 'chosen'
+                error = 'Word "{}" is not found in the {} corpus.'.format(each, language)
                 break
 
         if stemmed == True:  # Stem the query
@@ -174,9 +188,11 @@ def search_wikicorpus(query_string):
 
     # Output result
     with io.open('results.txt', 'w', encoding='UTF-8') as tweet_results:
+        matches.append('Relevance ranking:\n')
         for i, (score, doc_idx) in enumerate(ranked_scores_and_doc_ids):
+            #tweet_results.write(id_og_dict[tweets_id[doc_idx]])
             tweet_results.write(tweets_data[doc_idx])
-            matches.append("Doc #{:d} (score: {:.4f}): {:s}\n".format(i, score, tweets_id[doc_idx]))
+            matches.append("#{:d} (score: {:.4f}): {}\n".format(i, score, id_og_dict[tweets_id[doc_idx]]))
     tweet_results.close()
 
     extractor = pke.unsupervised.TopicRank()
@@ -198,7 +214,7 @@ def plot_image():
     plot_tweets = []
     plot_scores = []
     for score, tweet_id in ranked_scores_and_doc_ids:
-        plot_tweets.append(tweets_id[tweet_id])
+        plot_tweets.append('\n'.join(id_date_dict[tweets_id[tweet_id]].split()))    #Show tweet country & date (instead of id nr.)
         plot_scores.append(score)
 
     fig, ax = plt.subplots()
@@ -207,7 +223,7 @@ def plot_image():
         ax.bar(plot_tweets[0:5], plot_scores[0:5], color='purple')
     else:
         ax.bar(plot_tweets, plot_scores, color='purple')
-    fig.suptitle("Tweets and their scores")
+    fig.suptitle("Country and date of relevant tweets")
     png_image = io.BytesIO()
     FigureCanvas(fig).print_png(png_image)
 
@@ -227,7 +243,7 @@ def plot_keyphrase_image():
         ax.bar(plot_words[0:5], plot_keyphrase_scores[0:5], color='purple')
     else:
         ax.bar(plot_words, plot_keyphrase_scores, color='purple')
-    fig.suptitle("Keywords and their scores")
+    fig.suptitle("Keywords and their relevance")
     png_image = io.BytesIO()
     FigureCanvas(fig).print_png(png_image)
 
