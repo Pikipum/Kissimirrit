@@ -69,12 +69,12 @@
       </style>
     </head>
     <body>
-        <h1><i>Search Tweets</i></h1>
-        <!--Reload the page with variable "query" in the URL-->
+        <h1><i>Search Tweets  </i><img id="birdImage" src="{{ full_filename_png }}" alt="a bird image" width="30" height="30"></h1>
+         <!--Reload the page with variable "query" in the URL-->
          <div class="query">
         <form>
          <input type="text" name="query" placeholder="Type your query here..." autofocus>
-         <input type="submit" value="Search">
+         <input type="submit" value="Search" onclick="animation(1)">
        </form>
         <div class="dropdown">
                <form method="POST"  action="/select_language">
@@ -125,6 +125,17 @@
       </div>
       {% endif %}
       </div>
+    <script>
+    function animation(on_off) {
+       var image;
+       if (on_off == 0) {
+           image = "{{ full_filename_png }}"
+       } else {
+           image = "{{ full_filename_gif }}"
+       }
+       document.getElementById('birdImage').src = image;
+    }
+    </script>
     </body>
 </html>
 

@@ -15,7 +15,7 @@ import matplotlib
 import csv
 import langid
 import pke
-
+import os
 
 def main():
 
@@ -91,8 +91,10 @@ def main():
     # [3] is the actual content of the tweet. To print out the 15th tweet of the corpus:
     # Use for example print(tweets[15][3])
 
+IMAGES_FOLDER = os.path.join('static', 'images')
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = IMAGES_FOLDER
 
 main()
 
@@ -101,6 +103,8 @@ matplotlib.use('Agg')
 
 @app.route('/search')
 def search():
+    full_filename_gif = os.path.join(app.config['UPLOAD_FOLDER'], 'twitter_bird.gif')
+    full_filename_png = os.path.join(app.config['UPLOAD_FOLDER'], 'twitter_image.png')
 
     global tweets_data, tweets_id
     tweets_data = lang_tweet_dict[selected_language]
@@ -163,7 +167,7 @@ def search():
             search_wikicorpus(inp)
 
     return render_template('index.html', matches=matches, languages=languages, countries=countries,
-                           words_known=words_known, error=error, plot_2=plot_2)
+                           words_known=words_known, error=error, plot_2=plot_2, full_filename_gif=full_filename_gif, full_filename_png=full_filename_png)
 
 
 @app.route('/select_language', methods=['POST', 'GET'])
@@ -249,4 +253,4 @@ def plot_keyphrase_image():
 
     return Response(png_image.getvalue(), mimetype='image/png')
 
-app.run('127.0.0.1', debug=True)
+#app.run('127.0.0.1', debug=True)
