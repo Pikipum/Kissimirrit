@@ -5,14 +5,13 @@
       <style>
           .results {
              display: flex;
-             align-items: flex-start;
-             justify-content: space-evenly;
           }
           h1 {
              text-align: center;
              font-family: geneva;
-             font-size: 40px;
+             font-size: 45px;
              padding: 15px;
+             text-shadow: 2px 3px lightgrey;
           }
           input[type=text], select {
              width: 70%;
@@ -53,13 +52,32 @@
           .dropdown-content a:hover {background-color: #f1f1f1;}
           .dropdown:hover .dropdown-content {display: block;}
           .dropbtn:hover {background-color: plum;}
+
           .query {
              width: 50%;
              margin: 0 auto;
-             padding: 20px;
+             padding: 30px;
           }
           .tweets {
-           width: 100%;
+           flex:50%;
+           margin: 10px;
+           border-radius: 15px;
+           padding: 10px;
+           box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+           font-family: verdana;
+           animation: change 3s;
+           animation-fill-mode: forwards;    
+          }
+          @keyframes change {
+           from {background-color: white; color: white;}
+           to {background-color: thistle; color: black;}
+          }
+          .plots {
+           flex:50%;
+           margin: 10px;
+           border-radius: 15px;
+           padding: 10px;
+           box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
           }
           .error {
           width: 100%;
@@ -78,7 +96,7 @@
        </form>
         <div class="dropdown">
                <form method="POST"  action="/select_language">
-                  <button class="dropbtn" type="submit">Languages</button>
+                  <button class="dropbtn" type="submit" title="Click me to save your language choice">Languages</button>
                    <div class="dropdown-content">
                      <select id="language" name="selected_lang">
                      {% for lang in languages %}
@@ -94,6 +112,7 @@
            <p> {{ error }}</p>
            </div>
           {% endif %}
+          {% if words_known %}
         <div class="results">
           <div class="tweets">
            <table>
@@ -101,18 +120,14 @@
                 search() function in the Flask app-->
              <tr>
                 {% if matches %}
-                {% for item in matches %}
-                <!--Display the name of the item based on the "name" key-->
+                {% for item in matches  %}
                 <td>{{ item }}</td>
-                <!--Display the image of the item based on the "source" key-->
-
             </tr>
             <!--End for loop-->
             {% endfor %}
               {% endif %}
           </table>
          </div>
-      {% if words_known %}
         <div class="plots">
       <table>
       <td>
