@@ -167,7 +167,7 @@ def search():
             search_wikicorpus(inp)
 
     return render_template('index.html', matches=matches, languages=languages, countries=countries,
-                           words_known=words_known, error=error, plot_2=plot_2, full_filename_gif=full_filename_gif, full_filename_png=full_filename_png)
+                           words_known=words_known, error=error, plot_2=plot_2, full_filename_gif=full_filename_gif, full_filename_png=full_filename_png, selected_language=selected_language)
 
 
 @app.route('/select_language', methods=['POST', 'GET'])
