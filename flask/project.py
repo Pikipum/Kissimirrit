@@ -17,6 +17,7 @@ import langid
 import pke
 import os
 
+
 def main():
 
     # read & process the corpus here
@@ -141,8 +142,8 @@ def search():
                 if selected_language in stemmer_dict.keys():    # Inform user which language was used as corpus
                     language = stemmer_dict[selected_language][0].upper() + stemmer_dict[selected_language][1:]
                 else:
-                    language = 'chosen'
-                error = 'Word "{}" is not found in the {} corpus.'.format(each, language)
+                    language = selected_language.upper()
+                error = 'Word "{}" is not found in {} corpus.'.format(each, language)
                 break
 
         if stemmed == True:  # Stem the query
@@ -167,7 +168,8 @@ def search():
             search_wikicorpus(inp)
 
     return render_template('index.html', matches=matches, languages=languages, countries=countries,
-                           words_known=words_known, error=error, plot_2=plot_2, full_filename_gif=full_filename_gif, full_filename_png=full_filename_png, selected_language=selected_language)
+                           words_known=words_known, error=error, plot_2=plot_2, full_filename_gif=full_filename_gif,
+                           full_filename_png=full_filename_png, selected_language=selected_language)
 
 
 @app.route('/select_language', methods=['POST', 'GET'])
@@ -253,4 +255,4 @@ def plot_keyphrase_image():
 
     return Response(png_image.getvalue(), mimetype='image/png')
 
-#app.run('127.0.0.1', debug=True)
+app.run('127.0.0.1', debug=True)

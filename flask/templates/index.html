@@ -99,7 +99,7 @@
                <form method="POST"  action="/select_language">
                   <button class="dropbtn" type="submit" title="Click me to save your language choice">Languages</button>
                    <div class="dropdown-content">
-                     <select id="language" name="selected_lang">
+                     <select id="language" name="selected_lang" onchange="this.form.submit()">
                      {% for lang in languages %}
                         <option value="{{ lang }}">{{lang}}</option>
                      {% endfor %}
