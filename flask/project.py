@@ -37,8 +37,8 @@ def main():
             language = langid.classify(row[3])
             languages.append(language[0])
 
-    languages = sorted(languages[1:])          # Sort language options for webpage
-    languages.insert(0,'en')
+    languages = sorted(languages)          # Sort language options for webpage
+    #languages.insert(0,'en')
     tweetcorp.close()
 
     global stemmer_dict
@@ -106,6 +106,19 @@ matplotlib.use('Agg')
 def search():
     full_filename_gif = os.path.join(app.config['UPLOAD_FOLDER'], 'twitter_bird.gif')
     full_filename_png = os.path.join(app.config['UPLOAD_FOLDER'], 'twitter_image.png')
+
+    if selected_language != 'en':
+        languages.pop(languages.index(selected_language))
+        languages.pop(languages.index('en'))
+        languages.sort()
+        languages.insert(0, selected_language)
+        languages.insert(1, 'en')
+    elif selected_language == 'en':
+        languages.pop(languages.index('en'))
+        languages.sort()
+        languages.insert(0, 'en')
+    
+    
 
     global tweets_data, tweets_id
     tweets_data = lang_tweet_dict[selected_language]
